@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Sección General -->
-    <item android:title="General">
+    <!-- Sección Principal -->
+    <item android:title="Principal">
         <menu>
             <item
                 android:id="@+id/nav_inicio"
@@ -16,22 +16,28 @@
                 android:id="@+id/nav_favoritos"
                 android:icon="@drawable/ic_star"
                 android:title="Favoritos" />
+        </menu>
+    </item>
+
+    <!-- Dropdown / Sección de Categorías (Sin Iconos) -->
+    <item android:title="Categorías">
+        <menu>
+            <item
+                android:id="@+id/nav_todas"
+                android:title="Todas" />
             <item
                 android:id="@+id/nav_escuela"
-                android:icon="@drawable/ic_school"
                 android:title="Escuela" />
             <item
                 android:id="@+id/nav_proyecto"
-                android:icon="@drawable/ic_assignment"
                 android:title="Proyecto" />
             <item
                 android:id="@+id/nav_trabajo"
-                android:icon="@drawable/ic_work"
                 android:title="Trabajo" />
         </menu>
     </item>
 
-    <!-- Sección Ajustes (Esto generará la línea divisoria) -->
+    <!-- Sección de Ajustes -->
     <item android:title="Ajustes">
         <menu>
             <item
@@ -39,17 +45,9 @@
                 android:icon="@drawable/ic_settings"
                 android:title="Ajustes" />
             <item
-                android:id="@+id/nav_widget"
-                android:icon="@drawable/ic_palette"
-                android:title="Widget" />
-            <item
-                android:id="@+id/nav_ayuda"
-                android:icon="@drawable/ic_help"
-                android:title="Ayuda" />
-            <item
                 android:id="@+id/nav_cerrar_sesion"
                 android:icon="@drawable/ic_logout"
-                android:title="Cerrar Sesion" />
+                android:title="Cerrar Sesión" />
         </menu>
     </item>
 
