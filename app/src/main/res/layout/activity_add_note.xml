@@ -21,13 +21,12 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_menu"
-            android:rotation="180"
+            android:contentDescription="Regresar"
+            android:src="@drawable/ic_back"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:tint="@color/on_surface"
-            android:contentDescription="Regresar" />
+            app:tint="@color/on_surface" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
