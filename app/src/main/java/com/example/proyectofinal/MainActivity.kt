@@ -9,12 +9,15 @@ import android.view.MenuItem
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.example.proyectofinal.databinding.ActivityMainBinding
 import com.google.android.material.navigation.NavigationView
 
@@ -25,6 +28,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private lateinit var binding: ActivityMainBinding
     private var keepSplashScreen = true
+    private val viewModel: NoteViewModel by viewModels()
+    private lateinit var adapter: NoteAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // 1. Instalar y configurar la duración del Splash Screen
@@ -43,8 +48,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         setContentView(binding.root)
 
         setupUI()
+        setupRecyclerView()
         setupNavigation()
         setupBackNavigation()
+        observeNotes()
     }
 
     private fun setupUI() {
@@ -73,6 +80,24 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         binding.fab.setOnClickListener {
             val intent = Intent(this, AddNoteActivity::class.java)
             startActivity(intent)
+        }
+    }
+
+    private fun setupRecyclerView() {
+        adapter = NoteAdapter { note ->
+            // Por ahora solo mostramos un toast al hacer click
+            showToast("Editando: ${note.title}")
+        }
+        binding.recyclerView.apply {
+            // Usamos StaggeredGridLayoutManager para un look tipo Google Keep
+            layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
+            adapter = this@MainActivity.adapter
+        }
+    }
+
+    private fun observeNotes() {
+        viewModel.allNotes.observe(this) { notes ->
+            adapter.submitList(notes)
         }
     }
 
