@@ -14,7 +14,7 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Pantalla para añadir o editar una nota.
+ * Pantalla para añadir o editar una tarea.
  */
 class AddNoteActivity : AppCompatActivity() {
 
@@ -50,7 +50,7 @@ class AddNoteActivity : AppCompatActivity() {
             finish()
         }
 
-        // Botón para guardar la nota
+        // Botón para guardar la tarea
         binding.btnSave.setOnClickListener {
             saveNote()
         }
@@ -62,7 +62,7 @@ class AddNoteActivity : AppCompatActivity() {
         val date = binding.tvDate.text.toString()
 
         if (title.isEmpty() && content.isEmpty()) {
-            Toast.makeText(this, "La nota no puede estar vacía", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "La tarea no puede estar vacía", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -73,7 +73,7 @@ class AddNoteActivity : AppCompatActivity() {
         )
 
         viewModel.insert(note)
-        Toast.makeText(this, "Nota guardada", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Tarea guardada", Toast.LENGTH_SHORT).show()
         finish()
     }
 
