@@ -187,12 +187,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun applyCurrentFilter() {
+        // 1. Filtrar por categoría
         var filteredNotes = if (currentFilter == "Todas") {
             lastNotesList.toList()
         } else {
             lastNotesList.filter { it.category == currentFilter }
         }
         
+        // 2. Filtrar por búsqueda
         if (currentSearchQuery.isNotEmpty()) {
             filteredNotes = filteredNotes.filter { 
                 it.title.contains(currentSearchQuery, ignoreCase = true) || 
@@ -200,10 +202,19 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
         }
 
+        // 3. Ordenar con prioridad para los fijados (isPinned)
         filteredNotes = if (currentSortOrder == "alpha") {
-            filteredNotes.sortedBy { it.title.lowercase() }
+            // Primero fijados, luego orden alfabético
+            filteredNotes.sortedWith(
+                compareByDescending<Note> { it.isPinned }
+                    .thenBy { it.title.lowercase() }
+            )
         } else {
-            filteredNotes.sortedByDescending { it.date }
+            // Primero fijados, luego orden por fecha descendente
+            filteredNotes.sortedWith(
+                compareByDescending<Note> { it.isPinned }
+                    .thenByDescending { it.date }
+            )
         }
         
         adapter.submitList(filteredNotes) {
