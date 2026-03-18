@@ -34,16 +34,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private lateinit var adapter: NoteAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // 1. Instalar Splash Screen
         val splashScreen = installSplashScreen()
-        
-        // CORRECCIÓN: Si savedInstanceState NO es nulo, significa que es una recreación 
-        // (por cambio de tema o rotación) y no queremos mostrar el splash de nuevo.
         if (savedInstanceState != null) {
             keepSplashScreen = false
         } else {
             splashScreen.setKeepOnScreenCondition { keepSplashScreen }
-            // Solo esperar 2 segundos en el primer arranque frío
             Handler(Looper.getMainLooper()).postDelayed({
                 keepSplashScreen = false
             }, 2000)
@@ -96,7 +91,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 if (note.isLocked) {
                     showToast("Esta tarea está bloqueada. Quita el bloqueo para editar.")
                 } else {
-                    // Implementar navegación a edición aquí
                     showToast("Abriendo tarea: ${note.title}")
                 }
             },
@@ -122,6 +116,15 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.action_pin -> {
+                    if (!note.isPinned) {
+                        // Intentando fijar: Verificar límite de 3
+                        val pinnedCount = adapter.currentList.count { it.isPinned }
+                        if (pinnedCount >= 3) {
+                            showToast("Solo puedes fijar un máximo de 3 tareas")
+                            return@setOnMenuItemClickListener true
+                        }
+                    }
+
                     val updatedNote = note.copy(isPinned = !note.isPinned)
                     viewModel.update(updatedNote)
                     showToast(if (updatedNote.isPinned) "Tarea fijada" else "Tarea desfijada")

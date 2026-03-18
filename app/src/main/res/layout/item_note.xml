@@ -16,6 +16,38 @@
         android:layout_height="wrap_content"
         android:padding="16dp">
 
+        <LinearLayout
+            android:id="@+id/layoutStatusIcons"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <ImageView
+                android:id="@+id/ivLocked"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginEnd="6dp"
+                android:src="@drawable/ic_lock"
+                android:visibility="gone"
+                app:tint="@color/on_surface_variant"
+                tools:visibility="visible"
+                android:contentDescription="@string/content_description_locked" />
+
+            <ImageView
+                android:id="@+id/ivPinned"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_star"
+                android:visibility="gone"
+                app:tint="@color/on_surface_variant"
+                tools:visibility="visible"
+                android:contentDescription="@string/content_description_pinned" />
+
+        </LinearLayout>
+
         <TextView
             android:id="@+id/textViewTitle"
             android:layout_width="0dp"
@@ -25,7 +57,8 @@
             android:textColor="@color/on_surface"
             android:textSize="17sp"
             android:textStyle="bold"
-            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginEnd="8dp"
+            app:layout_constraintEnd_toStartOf="@id/layoutStatusIcons"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             tools:text="Título de la tarea" />

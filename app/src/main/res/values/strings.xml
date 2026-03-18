@@ -22,4 +22,6 @@
     <string name="content_description_star">Marcar como importante</string>
     <string name="toast_task_saved">Tarea guardada</string>
     <string name="toast_task_empty">La tarea no puede estar vacía</string>
+    <string name="content_description_pinned">Tarea fijada</string>
+    <string name="content_description_locked">Tarea bloqueada</string>
 </resources>

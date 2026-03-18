@@ -1,6 +1,7 @@
 package com.example.proyectofinal
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -29,6 +30,10 @@ class NoteAdapter(
             binding.textViewTitle.text = note.title
             binding.textViewDescription.text = note.content
             binding.textViewDate.text = note.date
+            
+            // Mostrar u ocultar iconos de estado
+            binding.ivPinned.visibility = if (note.isPinned) View.VISIBLE else View.GONE
+            binding.ivLocked.visibility = if (note.isLocked) View.VISIBLE else View.GONE
             
             binding.root.setOnClickListener { onItemClick(note) }
             
