@@ -19,7 +19,7 @@ import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
-import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.proyectofinal.databinding.ActivityMainBinding
 import com.google.android.material.navigation.NavigationView
 
@@ -108,14 +108,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
         )
         binding.recyclerView.apply {
-            layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
+            // Cambio a una sola columna (escalera)
+            layoutManager = LinearLayoutManager(this@MainActivity)
             adapter = this@MainActivity.adapter
         }
     }
 
     private fun setupFilters() {
-        binding.chipGroup.setOnCheckedStateChangeListener { group, checkedIds ->
-            // Si no hay ninguno seleccionado (por click rápido), forzamos "Todas"
+        binding.chipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
             if (checkedIds.isEmpty()) {
                 binding.chipTodas.isChecked = true
                 currentFilter = "Todas"
@@ -138,16 +138,13 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun applyCurrentFilter() {
-        // Clonamos la lista para asegurar que DiffUtil trabaje con una nueva referencia
         val filteredNotes = if (currentFilter == "Todas") {
             lastNotesList.toList()
         } else {
             lastNotesList.filter { it.category == currentFilter }
         }
         
-        // Enviamos la lista filtrada
         adapter.submitList(filteredNotes) {
-            // Animación suave al inicio
             if (filteredNotes.isNotEmpty()) {
                 binding.recyclerView.post {
                     binding.recyclerView.scrollToPosition(0)
