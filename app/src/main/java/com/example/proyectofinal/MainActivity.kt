@@ -1,6 +1,7 @@
 package com.example.proyectofinal
 
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -8,20 +9,27 @@ import android.view.ContextThemeWrapper
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
+import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.example.proyectofinal.databinding.ActivityMainBinding
+import com.google.android.material.chip.Chip
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.navigation.NavigationView
 
 /**
@@ -36,6 +44,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private var currentFilter = "Todas"
     private var lastNotesList: List<Note> = emptyList()
     private var currentSearchQuery = ""
+    private var isGridView = false
+    private val dynamicCategories = mutableListOf<String>()
+    private var currentSortOrder = "date" // "date" o "alpha"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
@@ -109,25 +120,62 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 showTaskOptions(note, view)
             }
         )
-        binding.recyclerView.apply {
-            layoutManager = LinearLayoutManager(this@MainActivity)
-            adapter = this@MainActivity.adapter
+        updateRecyclerViewLayout()
+        binding.recyclerView.adapter = adapter
+    }
+
+    private fun updateRecyclerViewLayout() {
+        binding.recyclerView.layoutManager = if (isGridView) {
+            StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
+        } else {
+            LinearLayoutManager(this)
         }
     }
 
     private fun setupFilters() {
         binding.chipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
             if (checkedIds.isEmpty()) {
-                binding.chipTodas.isChecked = true
-                currentFilter = "Todas"
+                if (currentFilter != "Todas") {
+                    binding.chipTodas.isChecked = true
+                    currentFilter = "Todas"
+                    applyCurrentFilter()
+                }
             } else {
-                currentFilter = when {
-                    checkedIds.contains(R.id.chipEscuela) -> "Escuela"
-                    checkedIds.contains(R.id.chipTrabajo) -> "Trabajo"
-                    else -> "Todas"
+                val checkedId = checkedIds.first()
+                val checkedChip = findViewById<Chip>(checkedId)
+                if (checkedChip != null) {
+                    val newFilter = checkedChip.text.toString()
+                    if (currentFilter != newFilter) {
+                        currentFilter = newFilter
+                        applyCurrentFilter()
+                    }
                 }
             }
-            applyCurrentFilter()
+        }
+        
+        setupChipLongClick(binding.chipEscuela)
+        setupChipLongClick(binding.chipTrabajo)
+    }
+
+    private fun setupChipLongClick(chip: Chip) {
+        chip.setOnLongClickListener {
+            if (chip.id == R.id.chipTodas) return@setOnLongClickListener false
+            
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Eliminar sección")
+                .setMessage("¿Estás seguro de que quieres eliminar la sección '${chip.text}'?")
+                .setPositiveButton("Eliminar") { _, _ ->
+                    binding.chipGroup.removeView(chip)
+                    dynamicCategories.remove(chip.text.toString())
+                    if (currentFilter == chip.text.toString()) {
+                        binding.chipTodas.isChecked = true
+                        currentFilter = "Todas"
+                        applyCurrentFilter()
+                    }
+                }
+                .setNegativeButton("Cancelar", null)
+                .show()
+            true
         }
     }
 
@@ -139,19 +187,23 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun applyCurrentFilter() {
-        // 1. Primero filtramos por categoría
         var filteredNotes = if (currentFilter == "Todas") {
             lastNotesList.toList()
         } else {
             lastNotesList.filter { it.category == currentFilter }
         }
         
-        // 2. Luego filtramos por búsqueda (si hay texto escrito)
         if (currentSearchQuery.isNotEmpty()) {
             filteredNotes = filteredNotes.filter { 
                 it.title.contains(currentSearchQuery, ignoreCase = true) || 
                 it.content.contains(currentSearchQuery, ignoreCase = true) 
             }
+        }
+
+        filteredNotes = if (currentSortOrder == "alpha") {
+            filteredNotes.sortedBy { it.title.lowercase() }
+        } else {
+            filteredNotes.sortedByDescending { it.date }
         }
         
         adapter.submitList(filteredNotes) {
@@ -166,7 +218,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.main_menu, menu)
         
-        // Configurar la barra de búsqueda
         val searchItem = menu?.findItem(R.id.action_search)
         val searchView = searchItem?.actionView as? SearchView
         
@@ -179,7 +230,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                 override fun onQueryTextChange(newText: String?): Boolean {
                     currentSearchQuery = newText ?: ""
-                    applyCurrentFilter() // Filtrar en tiempo real
+                    applyCurrentFilter()
                     return true
                 }
             })
@@ -191,10 +242,134 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_more -> {
-                showToast("Más opciones próximamente")
+                showMainMenuOptions(findViewById(R.id.action_more))
                 true
             }
             else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun showMainMenuOptions(view: View) {
+        val wrapper = ContextThemeWrapper(this, R.style.CustomPopupMenuStyle)
+        val popup = PopupMenu(wrapper, view)
+        
+        val menu = popup.menu
+        
+        val viewToggleItem = menu.add(Menu.NONE, 1, 1, if (isGridView) "Vista Listada" else "Vista Cuadrícula")
+        viewToggleItem.icon = ContextCompat.getDrawable(this, if (isGridView) R.drawable.ic_view_list else R.drawable.ic_view_grid)
+        
+        val sortLabel = if (currentSortOrder == "date") "Ordenar A-Z" else "Ordenar por fecha"
+        val sortItem = menu.add(Menu.NONE, 2, 2, sortLabel)
+        sortItem.icon = ContextCompat.getDrawable(this, R.drawable.ic_sort)
+        
+        val addSectionItem = menu.add(Menu.NONE, 3, 3, "Agregar Sección")
+        addSectionItem.icon = ContextCompat.getDrawable(this, R.drawable.ic_add_section)
+
+        try {
+            val fieldPopup = PopupMenu::class.java.getDeclaredField("mPopup")
+            fieldPopup.isAccessible = true
+            val menuPopupHelper = fieldPopup.get(popup)
+            val classPopupHelper = Class.forName(menuPopupHelper.javaClass.name)
+            val setForceIcons = classPopupHelper.getMethod("setForceShowIcon", Boolean::class.javaPrimitiveType)
+            setForceIcons.invoke(menuPopupHelper, true)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        popup.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId) {
+                1 -> {
+                    isGridView = !isGridView
+                    updateRecyclerViewLayout()
+                    showToast(if (isGridView) "Vista de cuadrícula variable" else "Vista de lista")
+                    true
+                }
+                2 -> {
+                    currentSortOrder = if (currentSortOrder == "date") "alpha" else "date"
+                    applyCurrentFilter()
+                    showToast(if (currentSortOrder == "alpha") "Ordenado alfabéticamente" else "Ordenado por fecha")
+                    true
+                }
+                3 -> {
+                    showAddSectionDialog()
+                    true
+                }
+                else -> false
+            }
+        }
+        popup.show()
+    }
+
+    private fun showAddSectionDialog() {
+        val container = FrameLayout(this)
+        val params = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT
+        )
+        val margin = (24 * resources.displayMetrics.density).toInt()
+        params.setMargins(margin, margin, margin, margin)
+        
+        val input = EditText(this)
+        input.layoutParams = params
+        input.hint = "Nombre de la sección"
+        
+        // Colores adaptables al tema
+        input.setTextColor(ContextCompat.getColor(this, R.color.on_background))
+        input.setHintTextColor(ContextCompat.getColor(this, R.color.on_surface_variant))
+        
+        container.addView(input)
+        
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle("Nueva sección")
+            .setView(container)
+            .setPositiveButton("Agregar") { _, _ ->
+                val name = input.text.toString().trim()
+                if (name.isNotEmpty()) {
+                    addNewSection(name)
+                } else {
+                    showToast("El nombre no puede estar vacío")
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .create()
+
+        dialog.setOnShowListener {
+            val window = dialog.window
+            // Fondo adaptable (blanco en claro, gris oscuro en noche)
+            window?.setBackgroundDrawableResource(R.drawable.bg_dialog_section)
+            
+            val blueColor = ContextCompat.getColor(this, R.color.primary)
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(blueColor)
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(blueColor)
+        }
+        
+        dialog.show()
+    }
+
+    private fun addNewSection(name: String) {
+        try {
+            if (dynamicCategories.contains(name) || name == "Todas" || name == "Escuela" || name == "Trabajo") {
+                showToast("Esta sección ya existe")
+                return
+            }
+
+            val newChip = Chip(this, null, com.google.android.material.R.attr.chipStyle)
+            newChip.id = View.generateViewId()
+            newChip.text = name
+            newChip.isCheckable = true
+            newChip.isClickable = true
+            
+            newChip.setChipBackgroundColorResource(R.color.chip_background_selector)
+            newChip.setTextColor(ContextCompat.getColorStateList(this, R.color.chip_text_selector))
+            
+            binding.chipGroup.addView(newChip)
+            dynamicCategories.add(name)
+            setupChipLongClick(newChip)
+            
+            showToast("Sección '$name' agregada")
+        } catch (e: Exception) {
+            e.printStackTrace()
+            showToast("Error al agregar sección")
         }
     }
 
@@ -289,6 +464,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
             R.id.nav_escuela -> binding.chipEscuela.isChecked = true
             R.id.nav_trabajo -> binding.chipTrabajo.isChecked = true
+            R.id.nav_todas -> binding.chipTodas.isChecked = true
             else -> showToast("Opción seleccionada: ${getString(getMenuTitleRes(id))}")
         }
     }

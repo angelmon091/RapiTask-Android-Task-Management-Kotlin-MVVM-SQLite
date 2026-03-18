@@ -16,6 +16,8 @@
 
         <!-- Forzar estilo de PopupMenu -->
         <item name="popupMenuStyle">@style/CustomPopupMenuStyle</item>
+        <item name="alertDialogTheme">@style/CustomAlertDialogTheme</item>
+        <item name="materialAlertDialogTheme">@style/CustomAlertDialogTheme</item>
     </style>
 
     <style name="Theme.ProyectoFinal" parent="Base.Theme.ProyectoFinal" />
@@ -24,6 +26,17 @@
     <style name="CustomPopupMenuStyle" parent="Widget.Material3.PopupMenu">
         <item name="android:popupBackground">@drawable/bg_popup_menu</item>
         <item name="android:popupElevation">8dp</item>
+    </style>
+
+    <!-- Estilo para diálogos coherente con Material3 y poco redondeo -->
+    <style name="CustomAlertDialogTheme" parent="Theme.Material3.DayNight.Dialog.Alert">
+        <!-- El fondo se adapta automáticamente al tema (blanco/oscuro) -->
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.Dialog</item>
+        <item name="colorPrimary">@color/primary</item>
+    </style>
+
+    <style name="ShapeAppearance.Dialog" parent="ShapeAppearance.Material3.LargeComponent">
+        <item name="cornerSize">8dp</item>
     </style>
 
     <!-- Tema para la Pantalla de Carga -->
