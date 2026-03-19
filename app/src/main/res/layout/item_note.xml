@@ -6,8 +6,8 @@
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
     app:cardBackgroundColor="@color/card_background"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="1dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="0dp"
     app:strokeWidth="1dp"
     app:strokeColor="@color/surface_variant">
 
@@ -27,9 +27,9 @@
 
             <ImageView
                 android:id="@+id/ivLocked"
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:layout_marginEnd="6dp"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_marginEnd="8dp"
                 android:src="@drawable/ic_lock"
                 android:visibility="gone"
                 app:tint="@color/on_surface_variant"
@@ -38,11 +38,11 @@
 
             <ImageView
                 android:id="@+id/ivPinned"
-                android:layout_width="16dp"
-                android:layout_height="16dp"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
                 android:src="@drawable/ic_star"
                 android:visibility="gone"
-                app:tint="@color/on_surface_variant"
+                app:tint="#FFB300"
                 tools:visibility="visible"
                 android:contentDescription="@string/content_description_pinned" />
 
@@ -67,7 +67,7 @@
             android:id="@+id/textViewDescription"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="8dp"
             android:ellipsize="end"
             android:maxLines="6"
             android:textColor="@color/on_surface_variant"
@@ -82,8 +82,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:textColor="@color/on_surface_variant"
-            android:textSize="11sp"
+            android:textColor="@color/primary"
+            android:textSize="12sp"
+            android:textStyle="bold"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/textViewDescription"
