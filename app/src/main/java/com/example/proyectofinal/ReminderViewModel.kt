@@ -18,38 +18,39 @@ class ReminderViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun insert(reminder: Reminder) = viewModelScope.launch {
-        repository.insert(reminder)
+        val id = repository.insert(reminder)
+        val newReminder = reminder.copy(id = id.toInt())
+        // Usamos el Scheduler profesional
+        ReminderScheduler.schedule(getApplication(), newReminder)
     }
 
     fun update(reminder: Reminder) = viewModelScope.launch {
         repository.update(reminder)
+        ReminderScheduler.schedule(getApplication(), reminder)
     }
 
     fun delete(reminder: Reminder) = viewModelScope.launch {
         repository.delete(reminder)
+        ReminderScheduler.cancel(getApplication(), reminder.id)
     }
 
     fun updateCompletionStatus(id: Int, completed: Boolean) = viewModelScope.launch {
         repository.updateCompletionStatus(id, completed)
+        if (completed) {
+            ReminderScheduler.cancel(getApplication(), id)
+        } else {
+            // Si se desmarca como completado, se vuelve a programar
+            allReminders.value?.find { it.id == id }?.let {
+                ReminderScheduler.schedule(getApplication(), it)
+            }
+        }
     }
 }
 
 class ReminderRepository(private val reminderDao: ReminderDao) {
     val allReminders = reminderDao.getAllReminders()
-
-    suspend fun insert(reminder: Reminder) {
-        reminderDao.insert(reminder)
-    }
-
-    suspend fun update(reminder: Reminder) {
-        reminderDao.update(reminder)
-    }
-
-    suspend fun delete(reminder: Reminder) {
-        reminderDao.delete(reminder)
-    }
-
-    suspend fun updateCompletionStatus(id: Int, completed: Boolean) {
-        reminderDao.updateCompletionStatus(id, completed)
-    }
+    suspend fun insert(reminder: Reminder): Long = reminderDao.insert(reminder)
+    suspend fun update(reminder: Reminder) = reminderDao.update(reminder)
+    suspend fun delete(reminder: Reminder) = reminderDao.delete(reminder)
+    suspend fun updateCompletionStatus(id: Int, completed: Boolean) = reminderDao.updateCompletionStatus(id, completed)
 }

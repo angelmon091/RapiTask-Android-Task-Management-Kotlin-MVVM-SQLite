@@ -1,8 +1,17 @@
 package com.example.proyectofinal
 
+import android.Manifest
+import android.app.AlarmManager
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.ArrayAdapter
@@ -10,8 +19,10 @@ import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -35,6 +46,15 @@ class RemindersActivity : AppCompatActivity() {
     private var allNotes: List<Note> = emptyList()
     private var showCompleted = false
 
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            Toast.makeText(this, "Notificaciones permitidas", Toast.LENGTH_SHORT).show()
+            checkBatteryOptimization()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -45,6 +65,57 @@ class RemindersActivity : AppCompatActivity() {
         setupRecyclerView()
         setupTabs()
         observeData()
+        
+        // Iniciamos la cadena de permisos
+        checkNotificationPermission()
+    }
+
+    private fun checkNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                checkBatteryOptimization()
+            }
+        } else {
+            checkBatteryOptimization()
+        }
+    }
+
+    private fun checkBatteryOptimization() {
+        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
+                MaterialAlertDialogBuilder(this)
+                    .setTitle("Funcionamiento en segundo plano")
+                    .setMessage("Para asegurar que los recordatorios lleguen a tiempo, por favor desactiva la optimización de batería para esta app.")
+                    .setPositiveButton("Configurar") { _, _ ->
+                        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                            data = Uri.parse("package:$packageName")
+                        }
+                        startActivity(intent)
+                    }
+                    .setNegativeButton("Omitir", null)
+                    .show()
+            } else {
+                checkExactAlarmPermission()
+            }
+        }
+    }
+
+    private fun checkExactAlarmPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            if (!alarmManager.canScheduleExactAlarms()) {
+                MaterialAlertDialogBuilder(this)
+                    .setTitle("Permiso de Alarma Exacta")
+                    .setMessage("Android requiere un permiso especial para que los recordatorios suenen al segundo exacto.")
+                    .setPositiveButton("Permitir") { _, _ ->
+                        startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
+                    }
+                    .show()
+            }
+        }
     }
 
     private fun setupUI() {
@@ -72,9 +143,7 @@ class RemindersActivity : AppCompatActivity() {
             onDelete = { reminder ->
                 showDeleteConfirmation(reminder)
             },
-            onClick = { reminder ->
-                // Opcional: Editar recordatorio
-            }
+            onClick = { reminder -> }
         )
         binding.rvReminders.layoutManager = LinearLayoutManager(this)
         binding.rvReminders.adapter = adapter
@@ -121,7 +190,6 @@ class RemindersActivity : AppCompatActivity() {
         val btnTime = dialogView.findViewById<Button>(R.id.btnPickTime)
         val cbHighPriority = dialogView.findViewById<MaterialCheckBox>(R.id.cbHighPriority)
         
-        // Configurar el adaptador para el selector de tareas
         val taskTitles = allNotes.map { it.title }
         val arrayAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, taskTitles)
         actvTaskSelector.setAdapter(arrayAdapter)
@@ -136,20 +204,18 @@ class RemindersActivity : AppCompatActivity() {
         btnTime.text = sdfTime.format(selectedTime.time)
 
         btnDate.setOnClickListener {
-            val datePicker = DatePickerDialog(this, { _, year, month, dayOfMonth ->
+            DatePickerDialog(this, { _, year, month, dayOfMonth ->
                 selectedDate.set(year, month, dayOfMonth)
                 btnDate.text = sdfDate.format(selectedDate.time)
-            }, selectedDate.get(Calendar.YEAR), selectedDate.get(Calendar.MONTH), selectedDate.get(Calendar.DAY_OF_MONTH))
-            datePicker.show()
+            }, selectedDate.get(Calendar.YEAR), selectedDate.get(Calendar.MONTH), selectedDate.get(Calendar.DAY_OF_MONTH)).show()
         }
 
         btnTime.setOnClickListener {
-            val timePicker = TimePickerDialog(this, { _, hourOfDay, minute ->
+            TimePickerDialog(this, { _, hourOfDay, minute ->
                 selectedTime.set(Calendar.HOUR_OF_DAY, hourOfDay)
                 selectedTime.set(Calendar.MINUTE, minute)
                 btnTime.text = sdfTime.format(selectedTime.time)
-            }, selectedTime.get(Calendar.HOUR_OF_DAY), selectedTime.get(Calendar.MINUTE), true)
-            timePicker.show()
+            }, selectedTime.get(Calendar.HOUR_OF_DAY), selectedTime.get(Calendar.MINUTE), true).show()
         }
         
         MaterialAlertDialogBuilder(this)

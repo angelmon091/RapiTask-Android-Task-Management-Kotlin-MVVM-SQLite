@@ -2,6 +2,7 @@ package com.example.proyectofinal
 
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -65,6 +66,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Iniciamos el Foreground Service para asegurar que las alarmas no mueran al cerrar la app
+        startReminderService()
+
         loadCategories()
         setupUI()
         setupRecyclerView()
@@ -73,6 +77,15 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         setupFilters()
 
         observeNotesOnce()
+    }
+
+    private fun startReminderService() {
+        val serviceIntent = Intent(this, ReminderService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent)
+        } else {
+            startService(serviceIntent)
+        }
     }
 
     private fun setupUI() {
