@@ -28,7 +28,8 @@
                 android:layout_height="?attr/actionBarSize"
                 app:navigationIcon="@drawable/ic_menu"
                 app:navigationIconTint="@color/on_surface"
-                app:title="" />
+                app:title=""
+                app:theme="@style/ThemeOverlay.App.Toolbar" />
 
             <HorizontalScrollView
                 android:layout_width="match_parent"
@@ -115,6 +116,7 @@
         app:itemIconPadding="16dp"
         app:itemTextAppearanceActive="@style/TextAppearance.Material3.LabelLarge"
         app:itemTextAppearanceInactive="@style/TextAppearance.Material3.LabelLarge"
+        app:subheaderTextAppearance="@style/TextAppearance.App.NavSubheader"
         tools:ignore="VisualLintBounds" />
 
 </androidx.drawerlayout.widget.DrawerLayout>

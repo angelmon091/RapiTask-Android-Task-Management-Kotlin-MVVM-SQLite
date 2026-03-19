@@ -46,4 +46,15 @@
         <item name="windowSplashScreenAnimationDuration">1000</item>
         <item name="postSplashScreenTheme">@style/Theme.ProyectoFinal</item>
     </style>
+
+    <!-- Estilo para los títulos de secciones en el Sidebar -->
+    <style name="TextAppearance.App.NavSubheader" parent="TextAppearance.Material3.LabelMedium">
+        <item name="android:textColor">@color/primary</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- Overlay para el Toolbar para asegurar que los iconos sean del color correcto -->
+    <style name="ThemeOverlay.App.Toolbar" parent="ThemeOverlay.Material3.ActionBar">
+        <item name="colorControlNormal">@color/on_surface</item>
+    </style>
 </resources>
