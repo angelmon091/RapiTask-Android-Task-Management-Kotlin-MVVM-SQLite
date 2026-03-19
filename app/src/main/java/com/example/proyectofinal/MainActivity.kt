@@ -137,14 +137,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         // Limpiar excepto el fijo "Todas"
         binding.chipGroup.removeAllViews()
         
-        // Agregar "Todas"
+        // Agregar "Todas" (única que no se puede eliminar)
         addChipToGroup("Todas", isDefault = true)
         
-        // Agregar Escuela y Trabajo
-        addChipToGroup("Escuela", isDefault = true)
-        addChipToGroup("Trabajo", isDefault = true)
-        
-        // Agregar dinámicas cargadas
+        // Agregar dinámicas cargadas (incluyendo Escuela y Trabajo si no han sido eliminadas)
         dynamicCategories.forEach { addChipToGroup(it, isDefault = false) }
 
         binding.chipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
@@ -194,7 +190,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             chip.id = View.generateViewId()
         }
 
-        if (!isDefault || name == "Escuela" || name == "Trabajo") {
+        // Solo "Todas" es por defecto y no tiene long click
+        if (!isDefault) {
             setupChipLongClick(chip)
         }
 
@@ -247,6 +244,16 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun loadCategories() {
         val sharedPref = getSharedPreferences("TaskEzzPrefs", Context.MODE_PRIVATE)
+        
+        // Si es la primera vez, inicializamos con Escuela y Trabajo
+        if (!sharedPref.contains("CATEGORIES_INITIALIZED")) {
+            val initial = setOf("Escuela", "Trabajo")
+            sharedPref.edit()
+                .putStringSet("DYNAMIC_CATEGORIES", initial)
+                .putBoolean("CATEGORIES_INITIALIZED", true)
+                .apply()
+        }
+
         val saved = sharedPref.getStringSet("DYNAMIC_CATEGORIES", emptySet())
         dynamicCategories.clear()
         dynamicCategories.addAll(saved ?: emptySet())
@@ -425,7 +432,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun addNewSection(name: String) {
         try {
-            if (dynamicCategories.contains(name) || name == "Todas" || name == "Escuela" || name == "Trabajo") {
+            if (dynamicCategories.contains(name) || name == "Todas") {
                 showToast("Esta sección ya existe")
                 return
             }
