@@ -5,6 +5,17 @@
         <item name="colorOnPrimary">@color/on_primary</item>
         <item name="colorPrimaryContainer">@color/primary_container</item>
         <item name="colorOnPrimaryContainer">@color/on_primary_container</item>
+
+        <item name="colorSecondary">@color/secondary</item>
+        <item name="colorOnSecondary">@color/on_secondary</item>
+        <item name="colorSecondaryContainer">@color/secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/on_secondary_container</item>
+
+        <item name="colorTertiary">@color/tertiary</item>
+        <item name="colorOnTertiary">@color/on_tertiary</item>
+        <item name="colorTertiaryContainer">@color/tertiary_container</item>
+        <item name="colorOnTertiaryContainer">@color/on_tertiary_container</item>
+
         <item name="android:windowBackground">@color/background</item>
 
         <!-- Barra de estado y navegación transparentes -->
@@ -30,7 +41,6 @@
 
     <!-- Estilo para diálogos coherente con Material3 y poco redondeo -->
     <style name="CustomAlertDialogTheme" parent="Theme.Material3.DayNight.Dialog.Alert">
-        <!-- El fondo se adapta automáticamente al tema (blanco/oscuro) -->
         <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.Dialog</item>
         <item name="colorPrimary">@color/primary</item>
     </style>
@@ -53,7 +63,7 @@
         <item name="android:textStyle">bold</item>
     </style>
 
-    <!-- Overlay para el Toolbar para asegurar que los iconos sean del color correcto -->
+    <!-- Overlay para el Toolbar -->
     <style name="ThemeOverlay.App.Toolbar" parent="ThemeOverlay.Material3.ActionBar">
         <item name="colorControlNormal">@color/on_surface</item>
     </style>

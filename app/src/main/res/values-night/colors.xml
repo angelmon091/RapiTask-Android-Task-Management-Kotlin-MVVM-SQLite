@@ -1,10 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Dark Theme Colors -->
-    <color name="primary">#1976D2</color> <!-- Ajustado para que coincida con el botón de agregar (#1976D2) -->
+    <!-- Dark Theme Colors (Azul Total) -->
+    <color name="primary">#1976D2</color>
     <color name="on_primary">#E3F2FD</color>
-    <color name="primary_container">#1976D2</color>
+    <color name="primary_container">#1565C0</color>
     <color name="on_primary_container">#E3F2FD</color>
+
+    <color name="secondary">#64B5F6</color>
+    <color name="on_secondary">#0D47A1</color>
+    <color name="secondary_container">#1976D2</color>
+    <color name="on_secondary_container">#E3F2FD</color>
+
+    <color name="tertiary">#4FC3F7</color>
+    <color name="on_tertiary">#01579B</color>
+    <color name="tertiary_container">#0288D1</color>
+    <color name="on_tertiary_container">#E1F5FE</color>
 
     <color name="background">#121212</color>
     <color name="on_background">#E1E1E1</color>
