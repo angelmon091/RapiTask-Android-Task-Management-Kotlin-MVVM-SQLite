@@ -32,9 +32,6 @@ import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.navigation.NavigationView
 
-/**
- * Pantalla principal de la aplicación TaskEzz.
- */
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
     private lateinit var binding: ActivityMainBinding
@@ -46,7 +43,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private var currentSearchQuery = ""
     private var isGridView = false
     private val dynamicCategories = mutableListOf<String>()
-    private var currentSortOrder = "date" // "date" o "alpha"
+    private var currentSortOrder = "date"
     private var showFavoritesOnly = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,9 +52,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             keepSplashScreen = false
         } else {
             splashScreen.setKeepOnScreenCondition { keepSplashScreen }
-            Handler(Looper.getMainLooper()).postDelayed({
-                keepSplashScreen = false
-            }, 2000)
+            Handler(Looper.getMainLooper()).postDelayed({ keepSplashScreen = false }, 2000)
         }
 
         super.onCreate(savedInstanceState)
@@ -65,9 +60,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Iniciamos el Foreground Service para asegurar que las alarmas no mueran al cerrar la app
         startReminderService()
-
         loadCategories()
         setupUI()
         setupRecyclerView()
@@ -86,16 +79,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private fun setupUI() {
         ViewCompat.setOnApplyWindowInsetsListener(binding.drawerLayout) { _, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            binding.mainContent.updatePadding(
-                left = systemBars.left,
-                right = systemBars.right,
-                bottom = systemBars.bottom
-            )
+            binding.mainContent.updatePadding(left = systemBars.left, right = systemBars.right, bottom = systemBars.bottom)
             binding.appBarLayout.updatePadding(top = systemBars.top)
-            binding.navView.updatePadding(
-                top = systemBars.top,
-                bottom = systemBars.bottom
-            )
+            binding.navView.updatePadding(top = systemBars.top, bottom = systemBars.bottom)
             insets
         }
 
@@ -118,7 +104,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         adapter = NoteAdapter(
             onItemClick = { note ->
                 if (note.isLocked) {
-                    showToast("Esta tarea está bloqueada. Quita el bloqueo para editar.")
+                    showToast("Esta tarea está bloqueada.")
                 } else {
                     val intent = Intent(this, AddNoteActivity::class.java).apply {
                         putExtra("NOTE_ID", note.id)
@@ -126,9 +112,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     startActivity(intent)
                 }
             },
-            onItemLongClick = { note, view ->
-                showTaskOptions(note, view)
-            }
+            onItemLongClick = { note, view -> showTaskOptions(note, view) }
         )
         updateRecyclerViewLayout()
         binding.recyclerView.adapter = adapter
@@ -176,85 +160,49 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         chip.text = name
         chip.isCheckable = true
         chip.isClickable = true
-        
         chip.setChipBackgroundColorResource(R.color.chip_background_selector)
         chip.setTextColor(ContextCompat.getColorStateList(this, R.color.chip_text_selector))
-        chip.isCloseIconVisible = false
-        chip.isChipIconVisible = false
         chip.isCheckedIconVisible = false
         
         when (name) {
-            "Todas" -> {
-                chip.id = R.id.chipTodas
-                chip.isChecked = true
-            }
-            "Escuela" -> {
-                chip.id = R.id.chipEscuela
-            }
-            "Trabajo" -> {
-                chip.id = R.id.chipTrabajo
-            }
-            else -> {
-                chip.id = View.generateViewId()
-            }
+            "Todas" -> { chip.id = R.id.chipTodas; chip.isChecked = true }
+            "Escuela" -> chip.id = R.id.chipEscuela
+            "Trabajo" -> chip.id = R.id.chipTrabajo
+            else -> chip.id = View.generateViewId()
         }
 
         if (!isDefault) {
-            setupChipLongClick(chip)
+            chip.setOnLongClickListener {
+                MaterialAlertDialogBuilder(this)
+                    .setTitle("Eliminar sección")
+                    .setMessage("¿Eliminar '${chip.text}'?")
+                    .setPositiveButton("Eliminar") { _, _ ->
+                        dynamicCategories.remove(chip.text.toString())
+                        saveCategories()
+                        binding.chipGroup.removeView(chip)
+                        if (currentFilter == chip.text.toString()) {
+                            currentFilter = "Todas"
+                            findViewById<Chip>(R.id.chipTodas)?.isChecked = true
+                            applyCurrentFilter()
+                        }
+                    }
+                    .setNegativeButton("Cancelar", null)
+                    .show()
+                true
+            }
         }
-
         binding.chipGroup.addView(chip)
     }
 
-    private fun setupChipLongClick(chip: Chip) {
-        chip.setOnLongClickListener {
-            if (chip.text == "Todas") return@setOnLongClickListener false
-            
-            MaterialAlertDialogBuilder(this)
-                .setTitle("Eliminar sección")
-                .setMessage("¿Estás seguro de que quieres eliminar la sección '${chip.text}'? Todas las notas dentro de esta sección también se borrarán.")
-                .setPositiveButton("Eliminar") { _, _ ->
-                    val categoryToDelete = chip.text.toString()
-                    deleteNotesInCategory(categoryToDelete)
-                    binding.chipGroup.removeView(chip)
-                    dynamicCategories.remove(categoryToDelete)
-                    saveCategories()
-
-                    if (currentFilter == categoryToDelete) {
-                        currentFilter = "Todas"
-                        findViewById<Chip>(R.id.chipTodas)?.isChecked = true
-                        applyCurrentFilter()
-                    }
-                }
-                .setNegativeButton("Cancelar", null)
-                .show()
-            true
-        }
-    }
-
-    private fun deleteNotesInCategory(category: String) {
-        lastNotesList.filter { it.category == category }.forEach { note ->
-            viewModel.delete(note)
-        }
-    }
-
     private fun saveCategories() {
-        val sharedPref = getSharedPreferences("TaskEzzPrefs", MODE_PRIVATE)
-        sharedPref.edit {
+        getSharedPreferences("TaskEzzPrefs", MODE_PRIVATE).edit {
             putStringSet("DYNAMIC_CATEGORIES", dynamicCategories.toSet())
         }
     }
 
     private fun loadCategories() {
         val sharedPref = getSharedPreferences("TaskEzzPrefs", MODE_PRIVATE)
-        if (!sharedPref.contains("CATEGORIES_INITIALIZED")) {
-            val initial = setOf("Escuela", "Trabajo")
-            sharedPref.edit {
-                putStringSet("DYNAMIC_CATEGORIES", initial)
-                putBoolean("CATEGORIES_INITIALIZED", true)
-            }
-        }
-        val saved = sharedPref.getStringSet("DYNAMIC_CATEGORIES", emptySet())
+        val saved = sharedPref.getStringSet("DYNAMIC_CATEGORIES", setOf("Escuela", "Trabajo"))
         dynamicCategories.clear()
         dynamicCategories.addAll(saved ?: emptySet())
     }
@@ -280,19 +228,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
         }
 
-        // El ordenamiento prioriza SIEMPRE las notas fijadas (isPinned)
         filteredNotes = if (currentSortOrder == "alpha") {
-            filteredNotes.sortedWith(
-                compareByDescending<Note> { it.isPinned }
-                    .thenBy { it.title.lowercase() }
-            )
+            filteredNotes.sortedWith(compareByDescending<Note> { it.isPinned }.thenBy { it.title.lowercase() })
         } else {
-            filteredNotes.sortedWith(
-                compareByDescending<Note> { it.isPinned }
-                    .thenByDescending { it.date }
-            )
+            filteredNotes.sortedWith(compareByDescending<Note> { it.isPinned }.thenByDescending { it.date })
         }
-        
         adapter.submitList(filteredNotes)
     }
 
@@ -300,70 +240,37 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         menuInflater.inflate(R.menu.main_menu, menu)
         val searchItem = menu?.findItem(R.id.action_search)
         val searchView = searchItem?.actionView as? SearchView
-        searchView?.apply {
-            queryHint = "Buscar tareas..."
-            setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-                override fun onQueryTextSubmit(query: String?): Boolean = false
-                override fun onQueryTextChange(newText: String?): Boolean {
-                    currentSearchQuery = newText ?: ""
-                    applyCurrentFilter()
-                    return true
-                }
-            })
-        }
+        searchView?.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean = false
+            override fun onQueryTextChange(newText: String?): Boolean {
+                currentSearchQuery = newText ?: ""
+                applyCurrentFilter()
+                return true
+            }
+        })
         return true
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.action_more -> {
-                showMainMenuOptions(findViewById(R.id.action_more))
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
+        if (item.itemId == R.id.action_more) {
+            showMainMenuOptions(findViewById(R.id.action_more))
+            return true
         }
+        return super.onOptionsItemSelected(item)
     }
 
-    @SuppressLint("DiscouragedPrivateApi")
     private fun showMainMenuOptions(view: View) {
-        val wrapper = ContextThemeWrapper(this, R.style.CustomPopupMenuStyle)
-        val popup = PopupMenu(wrapper, view)
+        val popup = PopupMenu(ContextThemeWrapper(this, R.style.CustomPopupMenuStyle), view)
         val menu = popup.menu
-        val viewToggleItem = menu.add(Menu.NONE, 1, 1, if (isGridView) "Vista Listada" else "Vista Cuadrícula")
-        viewToggleItem.icon = ContextCompat.getDrawable(this, if (isGridView) R.drawable.ic_view_list else R.drawable.ic_view_grid)
-        val sortLabel = if (currentSortOrder == "date") "Ordenar A-Z" else "Ordenar por fecha"
-        val sortItem = menu.add(Menu.NONE, 2, 2, sortLabel)
-        sortItem.icon = ContextCompat.getDrawable(this, R.drawable.ic_sort)
-        val addSectionItem = menu.add(Menu.NONE, 3, 3, "Agregar Sección")
-        addSectionItem.icon = ContextCompat.getDrawable(this, R.drawable.ic_add_section)
-
-        try {
-            val fieldPopup = PopupMenu::class.java.getDeclaredField("mPopup")
-            fieldPopup.isAccessible = true
-            val menuPopupHelper = fieldPopup.get(popup)
-            val classPopupHelper = Class.forName(menuPopupHelper.javaClass.name)
-            val setForceIcons = classPopupHelper.getMethod("setForceShowIcon", Boolean::class.javaPrimitiveType)
-            setForceIcons.invoke(menuPopupHelper, true)
-        } catch (_: Exception) {
-            // Ignorar errores de reflexión
-        }
+        menu.add(Menu.NONE, 1, 1, if (isGridView) "Vista Listada" else "Vista Cuadrícula")
+        menu.add(Menu.NONE, 2, 2, if (currentSortOrder == "date") "Ordenar A-Z" else "Ordenar por fecha")
+        menu.add(Menu.NONE, 3, 3, "Agregar Sección")
 
         popup.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
-                1 -> {
-                    isGridView = !isGridView
-                    updateRecyclerViewLayout()
-                    true
-                }
-                2 -> {
-                    currentSortOrder = if (currentSortOrder == "date") "alpha" else "date"
-                    applyCurrentFilter()
-                    true
-                }
-                3 -> {
-                    showAddSectionDialog()
-                    true
-                }
+                1 -> { isGridView = !isGridView; updateRecyclerViewLayout(); true }
+                2 -> { currentSortOrder = if (currentSortOrder == "date") "alpha" else "date"; applyCurrentFilter(); true }
+                3 -> { showAddSectionDialog(); true }
                 else -> false
             }
         }
@@ -371,67 +278,30 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun showAddSectionDialog() {
-        val container = FrameLayout(this)
-        val params = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT)
-        val margin = (24 * resources.displayMetrics.density).toInt()
-        params.setMargins(margin, margin, margin, margin)
         val input = EditText(this)
-        input.layoutParams = params
-        input.hint = "Nombre de la sección"
-        container.addView(input)
-        
         MaterialAlertDialogBuilder(this)
             .setTitle("Nueva sección")
-            .setView(container)
+            .setView(input)
             .setPositiveButton("Agregar") { _, _ ->
                 val name = input.text.toString().trim()
-                if (name.isNotEmpty()) addNewSection(name)
+                if (name.isNotEmpty() && !dynamicCategories.contains(name)) {
+                    dynamicCategories.add(name)
+                    saveCategories()
+                    addChipToGroup(name, false)
+                }
             }
             .setNegativeButton("Cancelar", null)
             .show()
     }
 
-    private fun addNewSection(name: String) {
-        if (dynamicCategories.contains(name) || name == "Todas") return
-        dynamicCategories.add(name)
-        saveCategories()
-        addChipToGroup(name, isDefault = false)
-    }
-
     private fun showTaskOptions(note: Note, view: View) {
-        val wrapper = ContextThemeWrapper(this, R.style.CustomPopupMenuStyle)
-        val popup = PopupMenu(wrapper, view)
+        val popup = PopupMenu(ContextThemeWrapper(this, R.style.CustomPopupMenuStyle), view)
         popup.menuInflater.inflate(R.menu.task_options_menu, popup.menu)
-        val menu = popup.menu
-        menu.findItem(R.id.action_pin).title = if (note.isPinned) "Quitar fijado" else "Fijar"
-        menu.findItem(R.id.action_lock).title = if (note.isLocked) "Quitar bloqueo" else "Agregar bloqueo"
-
         popup.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
-                R.id.action_pin -> {
-                    // Validar máximo de 3 notas fijadas
-                    if (!note.isPinned) {
-                        val pinnedCount = lastNotesList.count { it.isPinned }
-                        if (pinnedCount >= 3) {
-                            showToast("Solo puedes fijar un máximo de 3 notas")
-                            return@setOnMenuItemClickListener true
-                        }
-                    }
-                    viewModel.update(note.copy(isPinned = !note.isPinned))
-                    true
-                }
-                R.id.action_lock -> {
-                    viewModel.update(note.copy(isLocked = !note.isLocked))
-                    true
-                }
-                R.id.action_duplicate -> {
-                    viewModel.insert(note.copy(id = 0, title = "${note.title} (Copia)", isPinned = false, isLocked = false))
-                    true
-                }
-                R.id.action_delete -> {
-                    viewModel.delete(note)
-                    true
-                }
+                R.id.action_pin -> { viewModel.update(note.copy(isPinned = !note.isPinned)); true }
+                R.id.action_lock -> { viewModel.update(note.copy(isLocked = !note.isLocked)); true }
+                R.id.action_delete -> { viewModel.delete(note); true }
                 else -> false
             }
         }
@@ -457,41 +327,16 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
-        handleNavigationAction(item.itemId)
+        when (item.itemId) {
+            R.id.nav_inicio -> { showFavoritesOnly = false; currentFilter = "Todas"; findViewById<Chip>(R.id.chipTodas)?.isChecked = true; applyCurrentFilter() }
+            R.id.nav_calendario -> startActivity(Intent(this, CalendarActivity::class.java))
+            R.id.nav_recordatorio -> startActivity(Intent(this, RemindersActivity::class.java))
+            R.id.nav_escuela -> { showFavoritesOnly = false; findViewById<Chip>(R.id.chipEscuela)?.isChecked = true }
+            R.id.nav_trabajo -> { showFavoritesOnly = false; findViewById<Chip>(R.id.chipTrabajo)?.isChecked = true }
+            R.id.nav_todas -> { showFavoritesOnly = false; findViewById<Chip>(R.id.chipTodas)?.isChecked = true }
+        }
         binding.drawerLayout.closeDrawer(GravityCompat.START)
         return true
-    }
-
-    private fun handleNavigationAction(id: Int) {
-        when (id) {
-            R.id.nav_inicio -> {
-                showFavoritesOnly = false
-                currentFilter = "Todas"
-                findViewById<Chip>(R.id.chipTodas)?.isChecked = true
-                applyCurrentFilter()
-            }
-            R.id.nav_recordatorio -> {
-                startActivity(Intent(this, RemindersActivity::class.java))
-            }
-            R.id.nav_favoritos -> {
-                showFavoritesOnly = true
-                binding.chipGroup.clearCheck()
-                applyCurrentFilter()
-            }
-            R.id.nav_escuela -> {
-                showFavoritesOnly = false
-                findViewById<Chip>(R.id.chipEscuela)?.isChecked = true
-            }
-            R.id.nav_trabajo -> {
-                showFavoritesOnly = false
-                findViewById<Chip>(R.id.chipTrabajo)?.isChecked = true
-            }
-            R.id.nav_todas -> {
-                showFavoritesOnly = false
-                findViewById<Chip>(R.id.chipTodas)?.isChecked = true
-            }
-            else -> showToast("Opción seleccionada")
-        }
     }
 
     private fun showToast(message: String) {

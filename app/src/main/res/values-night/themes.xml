@@ -25,7 +25,17 @@
         <!-- Light icons for dark background -->
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowLightNavigationBar" tools:targetApi="27">false</item>
+
+        <item name="popupMenuStyle">@style/CustomPopupMenuStyle</item>
+        <item name="alertDialogTheme">@style/CustomAlertDialogTheme</item>
+        <item name="materialAlertDialogTheme">@style/CustomAlertDialogTheme</item>
     </style>
 
     <style name="Theme.ProyectoFinal" parent="Base.Theme.ProyectoFinal" />
+
+    <style name="Widget.App.CalendarView" parent="android:Widget.CalendarView">
+        <item name="android:focusedMonthDateColor">?attr/colorOnSurface</item>
+        <item name="android:unfocusedMonthDateColor">?attr/colorOnSurfaceVariant</item>
+        <item name="android:weekSeparatorLineColor">@android:color/transparent</item>
+    </style>
 </resources>

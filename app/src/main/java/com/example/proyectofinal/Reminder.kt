@@ -13,5 +13,7 @@ data class Reminder(
     val dueTime: String, // Format: HH:mm
     val isCompleted: Boolean = false,
     val priority: Int = 0, // 0: Normal, 1: High
-    val category: String = "General"
+    val category: String = "General",
+    val repeatType: String = "None", // None, Daily, Weekly, Monthly
+    val repeatDays: String? = null // For specific days: "1,3,5" (Mon, Wed, Fri)
 )

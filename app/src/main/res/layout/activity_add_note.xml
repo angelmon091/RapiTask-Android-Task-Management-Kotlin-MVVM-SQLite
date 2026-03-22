@@ -5,15 +5,15 @@
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background">
+    android:background="?attr/colorSurface">
 
-    <!-- Toolbar Superior Minimalista -->
+    <!-- Toolbar Superior -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingHorizontal="8dp"
-        android:paddingVertical="12dp"
+        android:paddingVertical="8dp"
         app:layout_constraintTop_toTopOf="parent">
 
         <ImageButton
@@ -26,7 +26,34 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:tint="@color/on_surface" />
+            app:tint="?attr/colorOnSurface" />
+
+        <!-- Dropdown de Categoría Pequeño -->
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            app:boxStrokeWidth="0dp"
+            app:boxStrokeWidthFocused="0dp"
+            app:endIconTint="?attr/colorPrimary"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/btnSave"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <AutoCompleteTextView
+                android:id="@+id/actvCategory"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@null"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:minWidth="100dp"
+                android:inputType="none"
+                android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
+                android:textColor="?attr/colorPrimary" />
+
+        </com.google.android.material.textfield.TextInputLayout>
 
         <Button
             android:id="@+id/btnSave"
@@ -50,18 +77,36 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
             android:orientation="vertical"
-            android:padding="24dp">
+            android:paddingHorizontal="24dp"
+            android:paddingTop="8dp">
 
-            <TextView
-                android:id="@+id/tvDate"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="start"
-                tools:text="Lunes, 22 de Mayo a las 12:30"
-                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                android:textColor="@color/on_surface_variant" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tvDate"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    tools:text="Creada el 22 de Mayo" />
+
+                <!-- Diseño de Fecha Límite Mejorado -->
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipEndDate"
+                    style="@style/Widget.Material3.Chip.Assist"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Fecha límite"
+                    app:chipIcon="@drawable/ic_calendar"
+                    app:chipIconTint="?attr/colorPrimary"
+                    app:chipStrokeColor="?attr/colorOutlineVariant" />
+            </LinearLayout>
 
             <EditText
                 android:id="@+id/etTitle"
@@ -72,13 +117,10 @@
                 android:hint="@string/hint_task_title"
                 android:importantForAutofill="no"
                 android:inputType="textCapSentences"
-                android:maxWidth="600dp"
-                android:minHeight="48dp"
-                android:textAppearance="@style/TextAppearance.Material3.HeadlineLarge"
-                android:textColor="@color/on_surface"
-                android:textColorHint="@color/on_surface_variant"
-                android:textStyle="bold"
-                tools:ignore="VisualLintTextFieldSize" />
+                android:textAppearance="@style/TextAppearance.Material3.HeadlineMedium"
+                android:textColor="?attr/colorOnSurface"
+                android:textColorHint="?attr/colorOnSurfaceVariant"
+                android:textStyle="bold" />
 
             <EditText
                 android:id="@+id/etContent"
@@ -90,60 +132,111 @@
                 android:hint="@string/hint_task_content"
                 android:importantForAutofill="no"
                 android:inputType="textMultiLine"
-                android:minHeight="300dp"
-                android:maxWidth="600dp"
+                android:minHeight="150dp"
                 android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
-                android:textColor="@color/on_surface"
-                android:textColorHint="@color/on_surface_variant"
-                tools:ignore="VisualLintTextFieldSize" />
+                android:textColor="?attr/colorOnSurface"
+                android:textColorHint="?attr/colorOnSurfaceVariant" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="20dp"
+                android:background="?attr/colorSurfaceVariant" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Lista de tareas"
+                android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+                android:textColor="?attr/colorPrimary"
+                android:textStyle="bold" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvSubtasks"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:nestedScrollingEnabled="false" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAddSubtask"
+                style="@style/Widget.Material3.Button.TextButton.Icon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Añadir paso"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                app:icon="@drawable/ic_add"
+                app:iconTint="?attr/colorOnSurfaceVariant" />
+
+            <ImageView
+                android:id="@+id/ivTaskImage"
+                android:layout_width="match_parent"
+                android:layout_height="240dp"
+                android:layout_marginTop="16dp"
+                android:scaleType="centerCrop"
+                android:visibility="gone" />
 
         </LinearLayout>
     </ScrollView>
 
-    <!-- Barra Inferior de Herramientas Minimalista -->
-    <HorizontalScrollView
+    <!-- Barra Inferior Homogénea -->
+    <com.google.android.material.card.MaterialCardView
         android:id="@+id/bottomBar"
         android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:background="@color/surface_variant"
-        android:scrollbars="none"
+        android:layout_height="72dp"
+        app:cardBackgroundColor="?attr/colorSurface"
+        app:cardElevation="8dp"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.None"
         app:layout_constraintBottom_toBottomOf="parent">
 
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingHorizontal="12dp">
+            android:paddingHorizontal="16dp">
 
             <ImageButton
-                android:id="@+id/btnPalette"
+                android:id="@+id/btnTextFormat"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/content_description_palette"
-                android:src="@drawable/ic_palette"
-                app:tint="@color/on_surface_variant" />
+                android:src="@drawable/ic_text_format"
+                app:tint="?attr/colorOnSurfaceVariant" />
 
             <ImageButton
-                android:id="@+id/btnNotifications"
+                android:id="@+id/btnAudio"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/content_description_notifications"
-                android:src="@drawable/ic_notifications"
-                app:tint="@color/on_surface_variant" />
+                android:src="@drawable/ic_mic"
+                app:tint="?attr/colorOnSurfaceVariant" />
 
             <ImageButton
-                android:id="@+id/btnStar"
+                android:id="@+id/btnImage"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/content_description_star"
-                android:src="@drawable/ic_star"
-                app:tint="@color/on_surface_variant" />
+                android:src="@drawable/ic_image"
+                app:tint="?attr/colorOnSurfaceVariant" />
+
+            <ImageButton
+                android:id="@+id/btnFile"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_attach_file"
+                app:tint="?attr/colorOnSurfaceVariant" />
+
+            <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1" />
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/swCompleted"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:thumbIcon="@drawable/ic_check" />
 
         </LinearLayout>
-    </HorizontalScrollView>
+    </com.google.android.material.card.MaterialCardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

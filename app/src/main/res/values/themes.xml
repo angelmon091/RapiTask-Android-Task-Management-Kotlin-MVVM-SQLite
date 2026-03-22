@@ -67,4 +67,10 @@
     <style name="ThemeOverlay.App.Toolbar" parent="ThemeOverlay.Material3.ActionBar">
         <item name="colorControlNormal">@color/on_surface</item>
     </style>
+
+    <style name="Widget.App.CalendarView" parent="android:Widget.CalendarView">
+        <item name="android:focusedMonthDateColor">?attr/colorOnSurface</item>
+        <item name="android:unfocusedMonthDateColor">?attr/colorOnSurfaceVariant</item>
+        <item name="android:weekSeparatorLineColor">@android:color/transparent</item>
+    </style>
 </resources>

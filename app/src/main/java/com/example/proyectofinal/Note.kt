@@ -13,5 +13,12 @@ data class Note(
     val category: String = "Todas",
     val isFavorite: Boolean = false,
     val isPinned: Boolean = false,
-    val isLocked: Boolean = false
+    val isLocked: Boolean = false,
+    val endDate: String? = null,
+    val endTime: String? = null,
+    val isCompleted: Boolean = false,
+    val imagePath: String? = null,
+    val audioPath: String? = null,
+    val fontSize: Float = 16f,
+    val fontType: String? = null
 )

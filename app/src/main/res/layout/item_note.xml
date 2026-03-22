@@ -16,6 +16,15 @@
         android:layout_height="wrap_content"
         android:padding="16dp">
 
+        <View
+            android:id="@+id/viewStatusIndicator"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            android:background="@drawable/shape_circle_status"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@id/textViewTitle"
+            app:layout_constraintBottom_toBottomOf="@id/textViewTitle" />
+
         <LinearLayout
             android:id="@+id/layoutStatusIcons"
             android:layout_width="wrap_content"
@@ -57,9 +66,10 @@
             android:textColor="@color/on_surface"
             android:textSize="17sp"
             android:textStyle="bold"
+            android:layout_marginStart="12dp"
             android:layout_marginEnd="8dp"
             app:layout_constraintEnd_toStartOf="@id/layoutStatusIcons"
-            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintStart_toEndOf="@id/viewStatusIndicator"
             app:layout_constraintTop_toTopOf="parent"
             tools:text="Título de la tarea" />
 

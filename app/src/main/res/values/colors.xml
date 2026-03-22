@@ -31,4 +31,10 @@
 
     <!-- Fondo de las tarjetas -->
     <color name="card_background">#F1F3F4</color>
+
+    <!-- Status Colors -->
+    <color name="status_overdue">#F44336</color>
+    <color name="status_soon">#FF9800</color>
+    <color name="status_on_time">#4CAF50</color>
+    <color name="status_completed">#9E9E9E</color>
 </resources>

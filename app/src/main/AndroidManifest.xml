@@ -45,6 +45,9 @@
             android:exported="false"
             android:theme="@style/Theme.ProyectoFinal" />
         <activity
+            android:name=".CalendarActivity"
+            android:exported="false" />
+        <activity
             android:name=".AddNoteActivity"
             android:exported="false" />
         <activity

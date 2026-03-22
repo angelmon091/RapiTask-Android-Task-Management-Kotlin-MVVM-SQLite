@@ -7,10 +7,8 @@ import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.PowerManager
 import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
@@ -51,7 +49,7 @@ class RemindersActivity : AppCompatActivity() {
     ) { isGranted: Boolean ->
         if (isGranted) {
             Toast.makeText(this, "Notificaciones permitidas", Toast.LENGTH_SHORT).show()
-            checkBatteryOptimization()
+            checkExactAlarmPermission()
         }
     }
 
@@ -66,7 +64,6 @@ class RemindersActivity : AppCompatActivity() {
         setupTabs()
         observeData()
         
-        // Iniciamos la cadena de permisos
         checkNotificationPermission()
     }
 
@@ -75,16 +72,11 @@ class RemindersActivity : AppCompatActivity() {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             } else {
-                checkBatteryOptimization()
+                checkExactAlarmPermission()
             }
         } else {
-            checkBatteryOptimization()
+            checkExactAlarmPermission()
         }
-    }
-
-    private fun checkBatteryOptimization() {
-        // Se elimina el mensaje de optimización de batería
-        checkExactAlarmPermission()
     }
 
     private fun checkExactAlarmPermission() {
@@ -170,6 +162,7 @@ class RemindersActivity : AppCompatActivity() {
     private fun showAddReminderDialog() {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_reminder, null)
         val actvTaskSelector = dialogView.findViewById<AutoCompleteTextView>(R.id.actvTaskSelector)
+        val actvRepeat = dialogView.findViewById<AutoCompleteTextView>(R.id.actvRepeat)
         val btnDate = dialogView.findViewById<Button>(R.id.btnPickDate)
         val btnTime = dialogView.findViewById<Button>(R.id.btnPickTime)
         val cbHighPriority = dialogView.findViewById<MaterialCheckBox>(R.id.cbHighPriority)
@@ -177,6 +170,10 @@ class RemindersActivity : AppCompatActivity() {
         val taskTitles = allNotes.map { it.title }
         val arrayAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, taskTitles)
         actvTaskSelector.setAdapter(arrayAdapter)
+        
+        val repeatOptions = arrayOf("No repetir", "Diariamente", "Semanalmente", "Mensualmente")
+        val repeatAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, repeatOptions)
+        actvRepeat.setAdapter(repeatAdapter)
         
         selectedDate = Calendar.getInstance()
         selectedTime = Calendar.getInstance()
@@ -207,16 +204,26 @@ class RemindersActivity : AppCompatActivity() {
             .setView(dialogView)
             .setPositiveButton(getString(R.string.btn_add)) { _, _ ->
                 val selectedTaskTitle = actvTaskSelector.text.toString().trim()
+                val selectedRepeat = actvRepeat.text.toString()
+                
                 if (selectedTaskTitle.isNotEmpty()) {
                     val dbDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                     val dbTimeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
                     
+                    val repeatType = when (selectedRepeat) {
+                        "Diariamente" -> "Daily"
+                        "Semanalmente" -> "Weekly"
+                        "Mensualmente" -> "Monthly"
+                        else -> "None"
+                    }
+
                     val reminder = Reminder(
                         title = selectedTaskTitle,
                         dueDate = dbDateFormat.format(selectedDate.time),
                         dueTime = dbTimeFormat.format(selectedTime.time),
                         priority = if (cbHighPriority.isChecked) 1 else 0,
-                        category = allNotes.find { it.title == selectedTaskTitle }?.category ?: "General"
+                        category = allNotes.find { it.title == selectedTaskTitle }?.category ?: "General",
+                        repeatType = repeatType
                     )
                     reminderViewModel.insert(reminder)
                 } else {

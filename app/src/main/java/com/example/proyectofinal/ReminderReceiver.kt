@@ -8,7 +8,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.PowerManager
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
@@ -25,18 +24,18 @@ class ReminderReceiver : BroadcastReceiver() {
 
         val pendingResult = goAsync()
 
-        if (intent.action == Intent.ACTION_BOOT_COMPLETED || 
-            intent.action == "android.intent.action.QUICKBOOT_POWERON") {
+        if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
             reprogramAllAlarms(context, pendingResult)
             return
         }
 
         val reminderId = intent.getIntExtra("REMINDER_ID", -1)
         val reminderTitle = intent.getStringExtra("REMINDER_TITLE") ?: "Recordatorio"
+        val reminderDescription = intent.getStringExtra("REMINDER_DESCRIPTION") ?: ""
         val reminderCategory = intent.getStringExtra("REMINDER_CATEGORY") ?: "General"
 
         if (reminderId != -1) {
-            showNotification(context, reminderId, reminderTitle, reminderCategory)
+            showNotification(context, reminderId, reminderTitle, reminderDescription, reminderCategory)
         }
         
         pendingResult.finish()
@@ -59,18 +58,16 @@ class ReminderReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun showNotification(context: Context, id: Int, title: String, category: String) {
-        val channelId = "reminders_discrete_channel"
+    private fun showNotification(context: Context, id: Int, title: String, description: String, category: String) {
+        val channelId = "reminders_channel"
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // Cambiamos a IMPORTANCE_DEFAULT para que NO aparezca en pantalla (heads-up)
             val channel = NotificationChannel(
                 channelId,
-                "Recordatorios de Tareas",
-                NotificationManager.IMPORTANCE_DEFAULT
+                "Recordatorios",
+                NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Notificaciones discretas de tus tareas"
                 enableLights(true)
                 lightColor = ContextCompat.getColor(context, R.color.primary)
                 enableVibration(true)
@@ -86,11 +83,18 @@ class ReminderReceiver : BroadcastReceiver() {
             context, id, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val contentText = if (description.isNotEmpty()) {
+            "$category: $description"
+        } else {
+            "Tarea pendiente de $category"
+        }
+
         val notification = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.logoapp)
             .setContentTitle(title)
-            .setContentText("Tarea pendiente: $category")
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT) // Prioridad normal para evitar banner
+            .setContentText(contentText)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(contentText))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setAutoCancel(true)
             .setColor(ContextCompat.getColor(context, R.color.primary))
