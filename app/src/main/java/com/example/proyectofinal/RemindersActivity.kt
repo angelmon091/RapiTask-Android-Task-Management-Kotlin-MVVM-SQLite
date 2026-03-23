@@ -2,8 +2,6 @@ package com.example.proyectofinal
 
 import android.Manifest
 import android.app.AlarmManager
-import android.app.DatePickerDialog
-import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -26,8 +24,11 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.proyectofinal.databinding.ActivityRemindersBinding
 import com.google.android.material.checkbox.MaterialCheckBox
+import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
+import com.google.android.material.timepicker.MaterialTimePicker
+import com.google.android.material.timepicker.TimeFormat
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -185,18 +186,34 @@ class RemindersActivity : AppCompatActivity() {
         btnTime.text = sdfTime.format(selectedTime.time)
 
         btnDate.setOnClickListener {
-            DatePickerDialog(this, { _, year, month, dayOfMonth ->
-                selectedDate.set(year, month, dayOfMonth)
+            val datePicker = MaterialDatePicker.Builder.datePicker()
+                .setTitleText("Seleccionar fecha")
+                .setSelection(selectedDate.timeInMillis)
+                .build()
+
+            datePicker.addOnPositiveButtonClickListener { selection ->
+                val calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+                calendar.timeInMillis = selection
+                selectedDate.set(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH))
                 btnDate.text = sdfDate.format(selectedDate.time)
-            }, selectedDate.get(Calendar.YEAR), selectedDate.get(Calendar.MONTH), selectedDate.get(Calendar.DAY_OF_MONTH)).show()
+            }
+            datePicker.show(supportFragmentManager, "DATE_PICKER")
         }
 
         btnTime.setOnClickListener {
-            TimePickerDialog(this, { _, hourOfDay, minute ->
-                selectedTime.set(Calendar.HOUR_OF_DAY, hourOfDay)
-                selectedTime.set(Calendar.MINUTE, minute)
+            val timePicker = MaterialTimePicker.Builder()
+                .setTimeFormat(TimeFormat.CLOCK_24H)
+                .setHour(selectedTime.get(Calendar.HOUR_OF_DAY))
+                .setMinute(selectedTime.get(Calendar.MINUTE))
+                .setTitleText("Seleccionar hora")
+                .build()
+
+            timePicker.addOnPositiveButtonClickListener {
+                selectedTime.set(Calendar.HOUR_OF_DAY, timePicker.hour)
+                selectedTime.set(Calendar.MINUTE, timePicker.minute)
                 btnTime.text = sdfTime.format(selectedTime.time)
-            }, selectedTime.get(Calendar.HOUR_OF_DAY), selectedTime.get(Calendar.MINUTE), true).show()
+            }
+            timePicker.show(supportFragmentManager, "TIME_PICKER")
         }
         
         MaterialAlertDialogBuilder(this)

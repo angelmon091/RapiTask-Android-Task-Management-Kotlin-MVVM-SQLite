@@ -1,6 +1,5 @@
 package com.example.proyectofinal
 
-import android.app.DatePickerDialog
 import android.os.Bundle
 import android.widget.ArrayAdapter
 import android.widget.Toast
@@ -13,6 +12,7 @@ import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.proyectofinal.databinding.ActivityAddNoteBinding
+import com.google.android.material.datepicker.MaterialDatePicker
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -135,14 +135,19 @@ class AddNoteActivity : AppCompatActivity() {
     }
 
     private fun showDatePicker() {
-        val calendar = Calendar.getInstance()
-        DatePickerDialog(this, { _, year, month, dayOfMonth ->
-            val selectedDate = Calendar.getInstance()
-            selectedDate.set(year, month, dayOfMonth)
+        val datePicker = MaterialDatePicker.Builder.datePicker()
+            .setTitleText("Seleccionar fecha de vencimiento")
+            .setSelection(MaterialDatePicker.todayInUtcMilliseconds())
+            .build()
+
+        datePicker.addOnPositiveButtonClickListener { selection ->
+            val calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+            calendar.timeInMillis = selection
             val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            endDate = sdf.format(selectedDate.time)
+            endDate = sdf.format(calendar.time)
             binding.chipEndDate.text = "Vence: $endDate"
-        }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show()
+        }
+        datePicker.show(supportFragmentManager, "DATE_PICKER")
     }
 
     private fun saveNote() {
