@@ -63,6 +63,10 @@ dependencies {
     // Calendar
     implementation(libs.material.calendarview)
 
+    // Glide
+    implementation(libs.glide)
+    kapt(libs.glide.compiler)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

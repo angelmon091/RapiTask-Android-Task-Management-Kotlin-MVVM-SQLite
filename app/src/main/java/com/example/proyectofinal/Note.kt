@@ -19,6 +19,7 @@ data class Note(
     val isCompleted: Boolean = false,
     val imagePath: String? = null,
     val audioPath: String? = null,
+    val filePath: String? = null,
     val fontSize: Float = 16f,
     val fontType: String? = null
 )

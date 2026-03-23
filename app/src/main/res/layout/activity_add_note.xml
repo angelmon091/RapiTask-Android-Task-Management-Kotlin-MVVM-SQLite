@@ -161,10 +161,10 @@
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvSubtasks"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_marginTop="8dp"
-                android:nestedScrollingEnabled="false"
-                android:background="@color/background" />
+                android:background="@color/background"
+                android:nestedScrollingEnabled="false" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnAddSubtask"
@@ -176,27 +176,79 @@
                 app:icon="@drawable/ic_add"
                 app:iconTint="?attr/colorOnSurfaceVariant" />
 
-            <ImageView
-                android:id="@+id/ivTaskImage"
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cvImageContainer"
                 android:layout_width="match_parent"
-                android:layout_height="240dp"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:scaleType="centerCrop"
-                android:visibility="gone" />
+                android:visibility="gone"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <ImageView
+                        android:id="@+id/ivTaskImage"
+                        android:layout_width="match_parent"
+                        android:layout_height="240dp"
+                        android:scaleType="centerCrop" />
+
+                    <ImageButton
+                        android:id="@+id/btnRemoveImage"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_gravity="top|end"
+                        android:layout_margin="8dp"
+                        android:background="@drawable/shape_circle_translucent"
+                        android:src="@drawable/ic_close"
+                        app:tint="@color/white" />
+                </FrameLayout>
+            </androidx.cardview.widget.CardView>
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipAudio"
+                style="@style/Widget.Material3.Chip.Assist"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:visibility="gone"
+                app:chipIcon="@drawable/ic_mic"
+                app:chipIconTint="@color/primary"
+                app:closeIconVisible="true" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipFile"
+                style="@style/Widget.Material3.Chip.Assist"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:visibility="gone"
+                app:chipIcon="@drawable/ic_attach_file"
+                app:chipIconTint="@color/primary"
+                app:closeIconVisible="true" />
+
+            <!-- Espacio extra al final para scroll -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="120dp" />
 
         </LinearLayout>
     </ScrollView>
 
-    <!-- Barra Inferior Homogénea -->
+    <!-- Barra Inferior Homogénea Elevada (Floating Style) -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/bottomBar"
         android:layout_width="match_parent"
         android:layout_height="72dp"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginBottom="8dp"
         app:cardBackgroundColor="@color/background"
         app:cardElevation="0dp"
         app:strokeWidth="1dp"
         app:strokeColor="?attr/colorOutlineVariant"
-        app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.None"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Large"
         app:layout_constraintBottom_toBottomOf="parent">
 
         <LinearLayout
@@ -204,48 +256,61 @@
             android:layout_height="match_parent"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingHorizontal="16dp"
-            android:background="@color/background">
+            android:paddingHorizontal="8dp">
 
-            <ImageButton
-                android:id="@+id/btnTextFormat"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_text_format"
-                app:tint="?attr/colorOnSurfaceVariant" />
+            <FrameLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1">
+
+                <ImageButton
+                    android:id="@+id/btnTextFormat"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="center"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_text_format"
+                    app:tint="@color/on_surface_variant" />
+            </FrameLayout>
 
             <ImageButton
                 android:id="@+id/btnAudio"
-                android:layout_width="48dp"
+                android:layout_width="0dp"
                 android:layout_height="48dp"
+                android:layout_weight="1"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_mic"
                 app:tint="?attr/colorOnSurfaceVariant" />
 
             <ImageButton
                 android:id="@+id/btnImage"
-                android:layout_width="48dp"
+                android:layout_width="0dp"
                 android:layout_height="48dp"
+                android:layout_weight="1"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_image"
                 app:tint="?attr/colorOnSurfaceVariant" />
 
             <ImageButton
                 android:id="@+id/btnFile"
-                android:layout_width="48dp"
+                android:layout_width="0dp"
                 android:layout_height="48dp"
+                android:layout_weight="1"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_attach_file"
                 app:tint="?attr/colorOnSurfaceVariant" />
 
-            <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1" />
-
-            <com.google.android.material.materialswitch.MaterialSwitch
-                android:id="@+id/swCompleted"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:thumbIcon="@drawable/ic_check" />
+            <FrameLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1">
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/swCompleted"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    app:thumbIcon="@drawable/ic_check" />
+            </FrameLayout>
 
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>

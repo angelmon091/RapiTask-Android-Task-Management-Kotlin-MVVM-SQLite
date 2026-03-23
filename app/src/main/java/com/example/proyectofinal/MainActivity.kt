@@ -300,6 +300,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 R.id.action_lock -> { viewModel.update(note.copy(isLocked = !note.isLocked)); true }
                 R.id.action_duplicate -> { duplicateTask(note); true }
                 R.id.action_delete -> { viewModel.delete(note); true }
+                R.id.action_favorite -> { viewModel.update(note.copy(isFavorite = !note.isFavorite)); true }
                 else -> false
             }
         }
@@ -344,9 +345,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             R.id.nav_inicio -> { showFavoritesOnly = false; currentFilter = "Todas"; findViewById<Chip>(R.id.chipTodas)?.isChecked = true; applyCurrentFilter() }
             R.id.nav_calendario -> startActivity(Intent(this, CalendarActivity::class.java))
             R.id.nav_recordatorio -> startActivity(Intent(this, RemindersActivity::class.java))
-            R.id.nav_escuela -> { showFavoritesOnly = false; findViewById<Chip>(R.id.chipEscuela)?.isChecked = true }
-            R.id.nav_trabajo -> { showFavoritesOnly = false; findViewById<Chip>(R.id.chipTrabajo)?.isChecked = true }
-            R.id.nav_todas -> { showFavoritesOnly = false; findViewById<Chip>(R.id.chipTodas)?.isChecked = true }
+            R.id.nav_favoritos -> { showFavoritesOnly = true; currentFilter = "Todas"; applyCurrentFilter() }
+            R.id.nav_ajustes -> startActivity(Intent(this, SettingsActivity::class.java))
         }
         binding.drawerLayout.closeDrawer(GravityCompat.START)
         return true

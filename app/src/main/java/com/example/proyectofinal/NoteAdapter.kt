@@ -2,11 +2,11 @@ package com.example.proyectofinal
 
 import android.content.res.ColorStateList
 import android.graphics.Paint
-import android.util.TypedValue
+import android.os.Build
+import android.text.Html
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.annotation.AttrRes
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -35,7 +35,16 @@ class NoteAdapter(
         
         fun bind(note: Note) {
             binding.textViewTitle.text = note.title
-            binding.textViewDescription.text = note.content
+            
+            // Render HTML content for the description
+            val contentHtml = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                Html.fromHtml(note.content, Html.FROM_HTML_MODE_COMPACT)
+            } else {
+                @Suppress("DEPRECATION")
+                Html.fromHtml(note.content)
+            }
+            binding.textViewDescription.text = contentHtml
+
             binding.textViewDate.text = note.date
             
             if (note.isCompleted) {

@@ -14,6 +14,7 @@ junit = "4.13.2"
 junitExt = "1.2.1"
 work = "2.10.0"
 material-calendarview = "1.4.3"
+glide = "4.16.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -38,6 +39,10 @@ androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx"
 
 # Calendar
 material-calendarview = { group = "com.github.prolificinteractive", name = "material-calendarview", version.ref = "material-calendarview" }
+
+# Glide
+glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
+glide-compiler = { group = "com.github.bumptech.glide", name = "compiler", version.ref = "glide" }
 
 # Test
 junit = { group = "junit", name = "junit", version.ref = "junit" }

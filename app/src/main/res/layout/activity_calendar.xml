@@ -45,7 +45,7 @@
                 android:paddingTop="12dp"
                 android:background="@color/background"
                 app:mcv_showOtherDates="all"
-                app:mcv_selectionColor="?attr/colorPrimaryContainer"
+                app:mcv_selectionColor="@android:color/transparent"
                 app:mcv_arrowColor="?attr/colorOnSurface"
                 app:mcv_headerTextAppearance="@style/TextAppearance.Material3.TitleMedium"
                 app:mcv_dateTextAppearance="@style/CalendarDateTextAppearance"
@@ -59,8 +59,8 @@
                 android:layout_marginStart="24dp"
                 android:layout_marginTop="16dp"
                 android:text="Tareas para este día"
-                android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+                android:textColor="?attr/colorPrimary"
                 android:textStyle="bold" />
 
             <androidx.recyclerview.widget.RecyclerView

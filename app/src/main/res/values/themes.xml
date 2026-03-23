@@ -4,7 +4,7 @@
         <item name="colorPrimary">@color/primary</item>
         <item name="colorOnPrimary">@color/on_primary</item>
         <item name="colorPrimaryContainer">@color/primary_container</item>
-        <item name="colorOnPrimaryContainer">@color/on_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/on_secondary_container</item>
 
         <item name="colorSecondary">@color/secondary</item>
         <item name="colorOnSecondary">@color/on_secondary</item>
@@ -29,7 +29,7 @@
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar" tools:targetApi="27">true</item>
 
-        <!-- Forzar estilo de PopupMenu y Diálogos -->
+        <!-- Estilo de PopupMenu y Diálogos COMPARTIDO -->
         <item name="popupMenuStyle">@style/CustomPopupMenuStyle</item>
         <item name="alertDialogTheme">@style/CustomAlertDialogTheme</item>
         <item name="materialAlertDialogTheme">@style/CustomAlertDialogTheme</item>
@@ -37,21 +37,22 @@
 
     <style name="Theme.ProyectoFinal" parent="Base.Theme.ProyectoFinal" />
 
-    <!-- Estilo de Menú con fondo forzado blanco -->
+    <!-- Estilo de Menú Neutro -->
     <style name="CustomPopupMenuStyle" parent="Widget.Material3.PopupMenu">
         <item name="android:popupBackground">@drawable/bg_popup_menu</item>
-        <item name="android:popupElevation">0dp</item>
     </style>
 
-    <!-- Estilo para diálogos homogeneizado -->
+    <!-- Estilo para diálogos Neutro -->
     <style name="CustomAlertDialogTheme" parent="Theme.Material3.DayNight.Dialog.Alert">
         <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.Dialog</item>
-        <item name="colorPrimary">@color/primary</item>
-        <item name="colorSurface">@color/surface</item>
+        <item name="colorSurface">@color/component_surface</item>
+        <item name="colorOnSurface">@color/component_on_surface</item>
+        <item name="backgroundTint">@color/component_surface</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
     </style>
 
     <style name="ShapeAppearance.Dialog" parent="ShapeAppearance.Material3.LargeComponent">
-        <item name="cornerSize">8dp</item>
+        <item name="cornerSize">16dp</item>
     </style>
 
     <!-- Tema para la Pantalla de Carga -->
@@ -62,13 +63,12 @@
         <item name="postSplashScreenTheme">@style/Theme.ProyectoFinal</item>
     </style>
 
-    <!-- Estilo para los títulos de secciones en el Sidebar -->
+    <!-- Estilos restaurados para evitar errores de compilación -->
     <style name="TextAppearance.App.NavSubheader" parent="TextAppearance.Material3.LabelMedium">
         <item name="android:textColor">@color/primary</item>
         <item name="android:textStyle">bold</item>
     </style>
 
-    <!-- Overlay para el Toolbar -->
     <style name="ThemeOverlay.App.Toolbar" parent="ThemeOverlay.Material3.ActionBar">
         <item name="colorControlNormal">@color/on_surface</item>
     </style>
