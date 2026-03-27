@@ -70,7 +70,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         setupBackNavigation()
         setupFilters()
 
-        observeNotesOnce()
+        observeNotes()
     }
 
     private fun setupUI() {
@@ -208,7 +208,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         dynamicCategories.addAll(saved ?: emptySet())
     }
 
-    private fun observeNotesOnce() {
+    private fun observeNotes() {
         viewModel.allNotes.observe(this) { notes ->
             lastNotesList = notes
             applyCurrentFilter()
@@ -230,9 +230,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
 
         filteredNotes = if (currentSortOrder == "alpha") {
-            filteredNotes.sortedWith(compareByDescending<Note> { it.isPinned }.thenBy { it.title.lowercase() })
+            filteredNotes.sortedWith(compareByDescending<Note> { it.isFavorite }.thenBy { it.title.lowercase() })
         } else {
-            filteredNotes.sortedWith(compareByDescending<Note> { it.isPinned }.thenByDescending { it.date })
+            filteredNotes.sortedWith(compareByDescending<Note> { it.isFavorite }.thenByDescending { it.timestamp })
         }
         adapter.submitList(filteredNotes)
     }
@@ -299,22 +299,26 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private fun showTaskOptions(note: Note, view: View) {
         val popup = PopupMenu(ContextThemeWrapper(this, R.style.CustomPopupMenuStyle), view)
         popup.menuInflater.inflate(R.menu.task_options_menu, popup.menu)
+        
+        // Adjust menu to reflect "Pin" is now "Favorite" logic
+        val pinItem = popup.menu.findItem(R.id.action_pin)
+        pinItem?.title = if (note.isFavorite) "Quitar de favoritos" else "Marcar como favorito"
+        
+        // Remove separate favorite action if it exists to avoid confusion
+        popup.menu.removeItem(R.id.action_favorite)
+
         popup.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.action_pin -> { 
-                    lifecycleScope.launch { viewModel.update(note.copy(isPinned = !note.isPinned)) }
+                    viewModel.update(note.copy(isFavorite = !note.isFavorite))
                     true 
                 }
                 R.id.action_lock -> { 
-                    lifecycleScope.launch { viewModel.update(note.copy(isLocked = !note.isLocked)) }
+                    viewModel.update(note.copy(isLocked = !note.isLocked))
                     true 
                 }
                 R.id.action_duplicate -> { duplicateTask(note); true }
                 R.id.action_delete -> { viewModel.delete(note); true }
-                R.id.action_favorite -> { 
-                    lifecycleScope.launch { viewModel.update(note.copy(isFavorite = !note.isFavorite)) }
-                    true 
-                }
                 else -> false
             }
         }
@@ -323,11 +327,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun duplicateTask(note: Note) {
         lifecycleScope.launch {
-            val duplicatedNote = note.copy(id = 0, title = "${note.title} (copia)")
+            val duplicatedNote = note.copy(id = 0, title = "${note.title} (copia)", timestamp = System.currentTimeMillis())
             val db = AppDatabase.getDatabase(this@MainActivity)
             val newNoteId = db.noteDao().insert(duplicatedNote).toInt()
             
-            // Duplicar subtareas si existen
             val subtasks = db.subtaskDao().getSubtasksByNoteId(note.id).first()
             subtasks.forEach { subtask ->
                 db.subtaskDao().insert(subtask.copy(id = 0, noteId = newNoteId))
@@ -348,11 +351,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         
         subMenu.clear()
         
-        // Add "Todas" with assignment icon
         subMenu.add(R.id.group_categories, R.id.nav_todas, 0, "Todas")
             .setIcon(R.drawable.ic_assignment)
             
-        // Add dynamic categories with the list icon (ic_list) for all
         dynamicCategories.forEach { category ->
             subMenu.add(R.id.group_categories, Menu.NONE, Menu.NONE, category)
                 .setIcon(R.drawable.ic_list)
@@ -388,7 +389,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
             R.id.nav_ajustes -> startActivity(Intent(this, SettingsActivity::class.java))
             else -> {
-                // Check if it's a dynamic category by title
                 val title = item.title.toString()
                 if (dynamicCategories.contains(title) || title == "Todas") {
                     categoryToSelect = title

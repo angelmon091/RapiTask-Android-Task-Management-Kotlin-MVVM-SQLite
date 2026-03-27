@@ -8,22 +8,28 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 
 class NoteViewModel(application: Application) : AndroidViewModel(application) {
-    private val dao = AppDatabase.getDatabase(application).noteDao()
-    val allNotes: LiveData<List<Note>> = dao.getAllNotes().asLiveData()
+    private val repository: NoteRepository
+    val allNotes: LiveData<List<Note>>
+
+    init {
+        val dao = AppDatabase.getDatabase(application).noteDao()
+        repository = NoteRepository(dao)
+        allNotes = repository.allNotes.asLiveData()
+    }
 
     suspend fun insert(note: Note): Long {
-        return dao.insert(note)
+        return repository.insert(note)
     }
 
     fun delete(note: Note) = viewModelScope.launch {
-        dao.delete(note)
+        repository.delete(note)
     }
 
-    suspend fun update(note: Note) {
-        dao.update(note)
+    fun update(note: Note) = viewModelScope.launch {
+        repository.update(note)
     }
 
     suspend fun getNoteById(id: Int): Note? {
-        return dao.getNoteById(id)
+        return repository.getNoteById(id)
     }
 }

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">TaskEasy</string>
+    <string name="app_name">RapiTask</string>
     <string name="menu_home">Inicio</string>
     <string name="menu_reminders">Recordatorio</string>
     <string name="menu_favorites">Favoritos</string>

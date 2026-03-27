@@ -190,7 +190,7 @@ class AddNoteActivity : AppCompatActivity() {
                 
                 binding.etContent.setText(spannedContent)
                 
-                binding.tvDate.text = "Creada el ${n.date}"
+                binding.tvDate.text = "Creada el ${n.dateText}"
                 binding.swCompleted.isChecked = n.isCompleted
                 category = n.category
                 endDate = n.endDate
@@ -502,7 +502,9 @@ class AddNoteActivity : AppCompatActivity() {
         datePicker.addOnPositiveButtonClickListener { selection ->
             val calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
             calendar.timeInMillis = selection
-            endDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(calendar.time)
+            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            sdf.timeZone = TimeZone.getTimeZone("UTC")
+            endDate = sdf.format(calendar.time)
             binding.chipEndDate.text = "Vence: $endDate"
         }
         datePicker.show(supportFragmentManager, "DP")
@@ -535,7 +537,7 @@ class AddNoteActivity : AppCompatActivity() {
             } else {
                 val sdf = SimpleDateFormat("EEEE, d 'de' MMMM", Locale("es", "ES"))
                 Note(
-                    title = finalTitle, content = contentHtml, date = sdf.format(Date()),
+                    title = finalTitle, content = contentHtml, dateText = sdf.format(Date()),
                     category = category, endDate = endDate, isCompleted = binding.swCompleted.isChecked,
                     imagePath = imageUri, audioPath = audioPath, filePath = fileUri,
                     fontSize = activeFontSize.toFloat()

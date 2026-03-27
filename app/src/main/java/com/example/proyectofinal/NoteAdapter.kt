@@ -36,7 +36,6 @@ class NoteAdapter(
         fun bind(note: Note) {
             binding.textViewTitle.text = note.title
             
-            // Render HTML content for the description
             val contentHtml = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 Html.fromHtml(note.content, Html.FROM_HTML_MODE_COMPACT)
             } else {
@@ -45,7 +44,7 @@ class NoteAdapter(
             }
             binding.textViewDescription.text = contentHtml
 
-            binding.textViewDate.text = note.date
+            binding.textViewDate.text = note.dateText
             
             if (note.isCompleted) {
                 binding.textViewTitle.paintFlags = binding.textViewTitle.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
@@ -60,7 +59,8 @@ class NoteAdapter(
                 )
             }
             
-            binding.ivPinned.visibility = if (note.isPinned) View.VISIBLE else View.GONE
+            // "Pinned" now means "Favorite" (using the star icon)
+            binding.ivPinned.visibility = if (note.isFavorite) View.VISIBLE else View.GONE
             binding.ivLocked.visibility = if (note.isLocked) View.VISIBLE else View.GONE
             
             binding.root.setOnClickListener { onItemClick(note) }
