@@ -47,7 +47,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private var isGridView = false
     private val dynamicCategories = mutableListOf<String>()
     private var currentSortOrder = "date"
-    private var showFavoritesOnly = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
@@ -133,7 +132,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 if (currentFilter != "Todas") {
                     findViewById<Chip>(R.id.chipTodas)?.isChecked = true
                     currentFilter = "Todas"
-                    showFavoritesOnly = false
                     applyCurrentFilter()
                 }
             } else {
@@ -143,7 +141,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     val newFilter = checkedChip.text.toString()
                     if (currentFilter != newFilter) {
                         currentFilter = newFilter
-                        showFavoritesOnly = false
                         applyCurrentFilter()
                     }
                 }
@@ -196,13 +193,13 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun saveCategories() {
-        getSharedPreferences("TaskEzzPrefs", MODE_PRIVATE).edit {
+        getSharedPreferences("RapiTaskPrefs", MODE_PRIVATE).edit {
             putStringSet("DYNAMIC_CATEGORIES", dynamicCategories.toSet())
         }
     }
 
     private fun loadCategories() {
-        val sharedPref = getSharedPreferences("TaskEzzPrefs", MODE_PRIVATE)
+        val sharedPref = getSharedPreferences("RapiTaskPrefs", MODE_PRIVATE)
         val saved = sharedPref.getStringSet("DYNAMIC_CATEGORIES", setOf("Escuela", "Trabajo"))
         dynamicCategories.clear()
         dynamicCategories.addAll(saved ?: emptySet())
@@ -216,9 +213,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun applyCurrentFilter() {
-        var filteredNotes = when {
-            showFavoritesOnly -> lastNotesList.filter { it.isFavorite }
-            currentFilter == "Todas" -> lastNotesList.toList()
+        var filteredNotes = when (currentFilter) {
+            "Todas" -> lastNotesList.toList()
             else -> lastNotesList.filter { it.category == currentFilter }
         }
         
@@ -234,6 +230,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         } else {
             filteredNotes.sortedWith(compareByDescending<Note> { it.isFavorite }.thenByDescending { it.timestamp })
         }
+        
+        binding.layoutEmptyState.visibility = if (filteredNotes.isEmpty()) View.VISIBLE else View.GONE
         adapter.submitList(filteredNotes)
     }
 
@@ -300,11 +298,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val popup = PopupMenu(ContextThemeWrapper(this, R.style.CustomPopupMenuStyle), view)
         popup.menuInflater.inflate(R.menu.task_options_menu, popup.menu)
         
-        // Adjust menu to reflect "Pin" is now "Favorite" logic
         val pinItem = popup.menu.findItem(R.id.action_pin)
         pinItem?.title = if (note.isFavorite) "Quitar de favoritos" else "Marcar como favorito"
         
-        // Remove separate favorite action if it exists to avoid confusion
         popup.menu.removeItem(R.id.action_favorite)
 
         popup.setOnMenuItemClickListener { menuItem ->
@@ -381,12 +377,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             R.id.nav_inicio, R.id.nav_todas -> categoryToSelect = "Todas"
             R.id.nav_calendario -> startActivity(Intent(this, CalendarActivity::class.java))
             R.id.nav_recordatorio -> startActivity(Intent(this, RemindersActivity::class.java))
-            R.id.nav_favoritos -> {
-                showFavoritesOnly = true
-                currentFilter = "Todas"
-                updateChipSelection("Todas")
-                applyCurrentFilter()
-            }
             R.id.nav_ajustes -> startActivity(Intent(this, SettingsActivity::class.java))
             else -> {
                 val title = item.title.toString()
@@ -397,7 +387,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
 
         categoryToSelect?.let {
-            showFavoritesOnly = false
             currentFilter = it
             updateChipSelection(it)
             applyCurrentFilter()

@@ -1,6 +1,7 @@
 package com.example.proyectofinal
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -171,6 +172,7 @@ class AddNoteActivity : AppCompatActivity() {
         binding.rvSubtasks.adapter = subtaskAdapter
     }
 
+    @SuppressLint("SetTextI18n")
     private fun loadExistingNote(id: Int) {
         lifecycleScope.launch {
             val note = withContext(Dispatchers.IO) { viewModel.getNoteById(id) }
@@ -181,13 +183,9 @@ class AddNoteActivity : AppCompatActivity() {
                 // Restablecer el tamaño base a 16sp para evitar herencias raras
                 binding.etContent.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
 
-                val spannedContent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                val spannedContent =
                     Html.fromHtml(n.content, Html.FROM_HTML_MODE_LEGACY)
-                } else {
-                    @Suppress("DEPRECATION")
-                    Html.fromHtml(n.content)
-                }
-                
+
                 binding.etContent.setText(spannedContent)
                 
                 binding.tvDate.text = "Creada el ${n.dateText}"
@@ -220,7 +218,7 @@ class AddNoteActivity : AppCompatActivity() {
     }
 
     private fun setupCategoryDropdown() {
-        val sharedPref = getSharedPreferences("TaskEzzPrefs", MODE_PRIVATE)
+        val sharedPref = getSharedPreferences("RapiTaskPrefs", MODE_PRIVATE)
         val saved = sharedPref.getStringSet("DYNAMIC_CATEGORIES", setOf("Escuela", "Trabajo"))
         val categories = mutableListOf("Todas")
         categories.addAll(saved ?: emptySet())
@@ -388,6 +386,7 @@ class AddNoteActivity : AppCompatActivity() {
         val storageDir = getExternalFilesDir(null)
         val audioFile = File(storageDir, fileName)
         audioPath = audioFile.absolutePath
+        @Suppress("DEPRECATION")
         mediaRecorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) MediaRecorder(this) else MediaRecorder()
         mediaRecorder?.apply {
             setAudioSource(MediaRecorder.AudioSource.MIC)

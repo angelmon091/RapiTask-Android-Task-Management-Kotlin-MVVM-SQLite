@@ -158,7 +158,7 @@ class CalendarActivity : AppCompatActivity() {
                     2 -> onTimeDays.add(day)
                     3 -> completedDays.add(day)
                 }
-            } catch (e: Exception) {}
+            } catch (_: Exception) {}
         }
         
         overdueDecorator.setDates(overdueDays)

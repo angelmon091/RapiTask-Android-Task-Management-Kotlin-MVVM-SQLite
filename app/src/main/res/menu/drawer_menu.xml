@@ -15,10 +15,6 @@
                 android:id="@+id/nav_recordatorio"
                 android:icon="@drawable/ic_notifications"
                 android:title="@string/menu_reminders" />
-            <item
-                android:id="@+id/nav_favoritos"
-                android:icon="@drawable/ic_star"
-                android:title="Favoritos" />
         </menu>
     </item>
 
