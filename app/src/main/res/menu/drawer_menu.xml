@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <item android:title="Principal">
+    <item android:id="@+id/group_principal" android:title="Principal">
         <menu>
             <item
                 android:id="@+id/nav_inicio"
@@ -22,21 +22,17 @@
         </menu>
     </item>
 
-    <item android:title="Categorías">
+    <item android:id="@+id/group_categories" android:title="Categorías">
         <menu>
+            <!-- Las categorías dinámicas se cargarán aquí -->
             <item
                 android:id="@+id/nav_todas"
+                android:icon="@drawable/ic_assignment"
                 android:title="@string/menu_all" />
-            <item
-                android:id="@+id/nav_escuela"
-                android:title="@string/menu_school" />
-            <item
-                android:id="@+id/nav_trabajo"
-                android:title="@string/menu_work" />
         </menu>
     </item>
 
-    <item android:title="Aplicación">
+    <item android:id="@+id/group_app" android:title="Aplicación">
         <menu>
             <item
                 android:id="@+id/nav_ajustes"

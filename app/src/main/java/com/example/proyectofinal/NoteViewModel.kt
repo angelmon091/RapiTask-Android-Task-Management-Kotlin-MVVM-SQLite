@@ -11,15 +11,15 @@ class NoteViewModel(application: Application) : AndroidViewModel(application) {
     private val dao = AppDatabase.getDatabase(application).noteDao()
     val allNotes: LiveData<List<Note>> = dao.getAllNotes().asLiveData()
 
-    fun insert(note: Note) = viewModelScope.launch {
-        dao.insert(note)
+    suspend fun insert(note: Note): Long {
+        return dao.insert(note)
     }
 
     fun delete(note: Note) = viewModelScope.launch {
         dao.delete(note)
     }
 
-    fun update(note: Note) = viewModelScope.launch {
+    suspend fun update(note: Note) {
         dao.update(note)
     }
 

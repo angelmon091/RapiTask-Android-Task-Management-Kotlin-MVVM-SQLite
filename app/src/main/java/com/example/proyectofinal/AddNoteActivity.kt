@@ -5,6 +5,7 @@ import android.app.Dialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Typeface
+import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.net.Uri
@@ -18,6 +19,8 @@ import android.text.TextWatcher
 import android.text.style.AbsoluteSizeSpan
 import android.text.style.StyleSpan
 import android.text.style.UnderlineSpan
+import android.util.Log
+import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
@@ -40,8 +43,10 @@ import com.example.proyectofinal.databinding.ActivityAddNoteBinding
 import com.example.proyectofinal.databinding.LayoutFormatSheetBinding
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.datepicker.MaterialDatePicker
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
@@ -59,39 +64,41 @@ class AddNoteActivity : AppCompatActivity() {
     private var audioPath: String? = null
     private var fileUri: String? = null
     
-    // Formatting states
     private var isBoldActive = false
     private var isUnderlineActive = false
-    private var activeFontSize: Int = 16 // in sp
+    private var activeFontSize: Int = 16 
 
     private lateinit var subtaskAdapter: SubtaskAdapter
     private val subtasks = mutableListOf<Subtask>()
 
-    // Audio recording variables
     private var mediaRecorder: MediaRecorder? = null
     private var mediaPlayer: MediaPlayer? = null
     private var isRecording = false
 
-    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         uri?.let {
             try {
                 contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            } catch (e: Exception) {}
+            } catch (e: Exception) {
+                Log.e("AddNoteActivity", "Error permission", e)
+            }
             imageUri = it.toString()
             showImage(it)
         }
     }
 
-    private val pickFileLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+    private val pickFileLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         uri?.let {
             val size = getFileSize(it)
-            if (size > 10 * 1024 * 1024) { // 10MB limit
+            if (size > 10 * 1024 * 1024) {
                 showToast("El archivo es demasiado grande (máx. 10MB)")
                 return@let
             }
             try {
                 contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            } catch (e: Exception) {}
+            } catch (e: Exception) {
+                Log.e("AddNoteActivity", "Error permission", e)
+            }
             fileUri = it.toString()
             showFile(it)
         }
@@ -122,18 +129,19 @@ class AddNoteActivity : AppCompatActivity() {
         binding.etContent.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                if (count > before) { // Text was added
-                    val end = start + count
+                if (count > before) {
+                    val startIdx = start
+                    val endIdx = start + count
                     val editable = binding.etContent.text
                     
                     if (isBoldActive) {
-                        editable.setSpan(StyleSpan(Typeface.BOLD), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                        editable.setSpan(StyleSpan(Typeface.BOLD), startIdx, endIdx, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
                     }
                     if (isUnderlineActive) {
-                        editable.setSpan(UnderlineSpan(), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                        editable.setSpan(UnderlineSpan(), startIdx, endIdx, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
                     }
-                    val sizePx = (activeFontSize * resources.displayMetrics.scaledDensity).toInt()
-                    editable.setSpan(AbsoluteSizeSpan(sizePx), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    // Aplicar tamaño activo solo al texto nuevo
+                    editable.setSpan(AbsoluteSizeSpan(activeFontSize, true), startIdx, endIdx, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
                 }
             }
             override fun afterTextChanged(s: Editable?) {}
@@ -143,17 +151,17 @@ class AddNoteActivity : AppCompatActivity() {
     private fun setupSubtasks() {
         subtaskAdapter = SubtaskAdapter(
             onTitleChanged = { position, newTitle ->
-                if (position < subtasks.size) {
+                if (position >= 0 && position < subtasks.size) {
                     subtasks[position] = subtasks[position].copy(title = newTitle)
                 }
             },
             onCheckedStateChanged = { position, isChecked ->
-                if (position < subtasks.size) {
+                if (position >= 0 && position < subtasks.size) {
                     subtasks[position] = subtasks[position].copy(isCompleted = isChecked)
                 }
             },
             onDeleteClicked = { position ->
-                if (position < subtasks.size) {
+                if (position >= 0 && position < subtasks.size) {
                     subtasks.removeAt(position)
                     subtaskAdapter.submitList(subtasks.toList())
                 }
@@ -165,25 +173,30 @@ class AddNoteActivity : AppCompatActivity() {
 
     private fun loadExistingNote(id: Int) {
         lifecycleScope.launch {
-            existingNote = viewModel.getNoteById(id)
-            existingNote?.let { note ->
-                binding.etTitle.setText(note.title)
+            val note = withContext(Dispatchers.IO) { viewModel.getNoteById(id) }
+            existingNote = note
+            note?.let { n ->
+                binding.etTitle.setText(n.title)
                 
+                // Restablecer el tamaño base a 16sp para evitar herencias raras
+                binding.etContent.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+
                 val spannedContent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    Html.fromHtml(note.content, Html.FROM_HTML_MODE_LEGACY)
+                    Html.fromHtml(n.content, Html.FROM_HTML_MODE_LEGACY)
                 } else {
                     @Suppress("DEPRECATION")
-                    Html.fromHtml(note.content)
+                    Html.fromHtml(n.content)
                 }
+                
                 binding.etContent.setText(spannedContent)
                 
-                binding.tvDate.text = "Creada el ${note.date}"
-                binding.swCompleted.isChecked = note.isCompleted
-                category = note.category
-                endDate = note.endDate
-                imageUri = note.imagePath
-                audioPath = note.audioPath
-                fileUri = note.filePath
+                binding.tvDate.text = "Creada el ${n.date}"
+                binding.swCompleted.isChecked = n.isCompleted
+                category = n.category
+                endDate = n.endDate
+                imageUri = n.imagePath
+                audioPath = n.audioPath
+                fileUri = n.filePath
 
                 if (endDate != null) {
                     binding.chipEndDate.text = "Vence: $endDate"
@@ -196,7 +209,9 @@ class AddNoteActivity : AppCompatActivity() {
                 setupCategoryDropdown()
                 
                 val db = AppDatabase.getDatabase(this@AddNoteActivity)
-                val loadedSubtasks = db.subtaskDao().getSubtasksByNoteId(note.id).first()
+                val loadedSubtasks = withContext(Dispatchers.IO) {
+                    db.subtaskDao().getSubtasksByNoteId(n.id).first()
+                }
                 subtasks.clear()
                 subtasks.addAll(loadedSubtasks)
                 subtaskAdapter.submitList(subtasks.toList())
@@ -224,22 +239,16 @@ class AddNoteActivity : AppCompatActivity() {
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.updatePadding(left = systemBars.left, right = systemBars.right, bottom = 0)
             binding.toolbar.updatePadding(top = systemBars.top)
-            
-            // Ajustar dinámicamente la barra inferior para que flote sobre los botones de navegación
             binding.bottomBar.updateLayoutParams<ViewGroup.MarginLayoutParams> {
                 val baseMargin = (24 * resources.displayMetrics.density).toInt()
                 bottomMargin = systemBars.bottom + baseMargin
             }
-            
             insets
         }
 
         binding.btnBack.setOnClickListener { finish() }
         binding.btnSave.setOnClickListener { saveNote() }
-
-        binding.chipEndDate.setOnClickListener {
-            showDatePicker()
-        }
+        binding.chipEndDate.setOnClickListener { showDatePicker() }
 
         binding.btnAddSubtask.setOnClickListener {
             val newSubtask = Subtask(noteId = existingNote?.id ?: 0, title = "")
@@ -249,8 +258,8 @@ class AddNoteActivity : AppCompatActivity() {
         
         binding.btnTextFormat.setOnClickListener { showFormatSheet() }
         binding.btnAudio.setOnClickListener { toggleRecording() }
-        binding.btnImage.setOnClickListener { pickImageLauncher.launch("image/*") }
-        binding.btnFile.setOnClickListener { pickFileLauncher.launch("*/*") }
+        binding.btnImage.setOnClickListener { pickImageLauncher.launch(arrayOf("image/*")) }
+        binding.btnFile.setOnClickListener { pickFileLauncher.launch(arrayOf("*/*")) }
 
         binding.btnRemoveImage.setOnClickListener {
             imageUri = null
@@ -262,9 +271,7 @@ class AddNoteActivity : AppCompatActivity() {
             binding.chipAudio.visibility = View.GONE
         }
         
-        binding.chipAudio.setOnClickListener {
-            playAudio()
-        }
+        binding.chipAudio.setOnClickListener { playAudio() }
 
         binding.chipFile.setOnCloseIconClickListener {
             fileUri = null
@@ -302,29 +309,25 @@ class AddNoteActivity : AppCompatActivity() {
         sheetBinding.toggleSizeGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (isChecked) {
                 activeFontSize = when (checkedId) {
-                    sheetBinding.btnSizeS.id -> 14
+                    sheetBinding.btnSizeS.id -> 12
                     sheetBinding.btnSizeM.id -> 16
-                    sheetBinding.btnSizeL.id -> 20
-                    sheetBinding.btnSizeXL.id -> 24
+                    sheetBinding.btnSizeL.id -> 24
+                    sheetBinding.btnSizeXL.id -> 32
                     else -> 16
                 }
-                val sizePx = (activeFontSize * resources.displayMetrics.scaledDensity).toInt()
-                applyFormatToSelection(AbsoluteSizeSpan(sizePx), true)
+                applyFormatToSelection(AbsoluteSizeSpan(activeFontSize, true), true)
             }
         }
 
         sheetBinding.btnClearFormat.setOnClickListener {
             val start = binding.etContent.selectionStart
             val end = binding.etContent.selectionEnd
-            val editable = binding.etContent.text
             if (start != -1 && end != -1 && start != end) {
+                val editable = binding.etContent.text
                 val spans = editable.getSpans(start, end, Object::class.java)
-                for (span in spans) {
-                    editable.removeSpan(span)
-                }
+                for (span in spans) { editable.removeSpan(span) }
             } else {
-                val text = editable.toString()
-                binding.etContent.setText(text)
+                binding.etContent.setText(binding.etContent.text.toString())
                 isBoldActive = false
                 isUnderlineActive = false
                 activeFontSize = 16
@@ -338,18 +341,15 @@ class AddNoteActivity : AppCompatActivity() {
     private fun updateFormatSheetUI(sheetBinding: LayoutFormatSheetBinding) {
         val activeColor = ContextCompat.getColor(this, R.color.primary)
         val inactiveColor = ContextCompat.getColor(this, android.R.color.transparent)
-        
         sheetBinding.btnBold.setBackgroundColor(if (isBoldActive) activeColor else inactiveColor)
         sheetBinding.btnBold.setTextColor(if (isBoldActive) ContextCompat.getColor(this, R.color.white) else activeColor)
-        
         sheetBinding.btnUnderline.setBackgroundColor(if (isUnderlineActive) activeColor else inactiveColor)
         sheetBinding.btnUnderline.setTextColor(if (isUnderlineActive) ContextCompat.getColor(this, R.color.white) else activeColor)
-
         when (activeFontSize) {
-            14 -> sheetBinding.toggleSizeGroup.check(sheetBinding.btnSizeS.id)
+            12 -> sheetBinding.toggleSizeGroup.check(sheetBinding.btnSizeS.id)
             16 -> sheetBinding.toggleSizeGroup.check(sheetBinding.btnSizeM.id)
-            20 -> sheetBinding.toggleSizeGroup.check(sheetBinding.btnSizeL.id)
-            24 -> sheetBinding.toggleSizeGroup.check(sheetBinding.btnSizeXL.id)
+            24 -> sheetBinding.toggleSizeGroup.check(sheetBinding.btnSizeL.id)
+            32 -> sheetBinding.toggleSizeGroup.check(sheetBinding.btnSizeXL.id)
         }
     }
 
@@ -357,33 +357,30 @@ class AddNoteActivity : AppCompatActivity() {
         val start = binding.etContent.selectionStart
         val end = binding.etContent.selectionEnd
         val editable = binding.etContent.text
-        
         if (start != -1 && end != -1 && start != end) {
+            // Si es un cambio de tamaño, primero eliminamos cualquier AbsoluteSizeSpan existente en el rango
+            if (span is AbsoluteSizeSpan) {
+                val existingSpans = editable.getSpans(start, end, AbsoluteSizeSpan::class.java)
+                for (s in existingSpans) { editable.removeSpan(s) }
+            }
+            
             if (active) {
                 editable.setSpan(span, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-            } else {
+            } else if (span !is AbsoluteSizeSpan) {
                 val spans = editable.getSpans(start, end, span.javaClass)
-                for (s in spans) {
-                    editable.removeSpan(s)
-                }
+                for (s in spans) { editable.removeSpan(s) }
             }
         }
     }
 
     private fun toggleRecording() {
-        if (!isRecording) {
-            checkAudioPermission()
-        } else {
-            stopRecording()
-        }
+        if (!isRecording) checkAudioPermission() else stopRecording()
     }
 
     private fun checkAudioPermission() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), 101)
-        } else {
-            startRecording()
-        }
+        } else startRecording()
     }
 
     private fun startRecording() {
@@ -391,12 +388,8 @@ class AddNoteActivity : AppCompatActivity() {
         val storageDir = getExternalFilesDir(null)
         val audioFile = File(storageDir, fileName)
         audioPath = audioFile.absolutePath
-
-        mediaRecorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            MediaRecorder(this)
-        } else {
-            MediaRecorder()
-        }.apply {
+        mediaRecorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) MediaRecorder(this) else MediaRecorder()
+        mediaRecorder?.apply {
             setAudioSource(MediaRecorder.AudioSource.MIC)
             setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
             setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
@@ -407,21 +400,14 @@ class AddNoteActivity : AppCompatActivity() {
                 isRecording = true
                 binding.btnAudio.setImageResource(android.R.drawable.ic_media_pause)
                 showToast("Grabando...")
-            } catch (e: IOException) {
-                showToast("Error al iniciar grabación")
-            }
+            } catch (e: IOException) { showToast("Error al grabar") }
         }
     }
 
     private fun stopRecording() {
         try {
-            mediaRecorder?.apply {
-                stop()
-                release()
-            }
-        } catch (e: Exception) {
-            showToast("Grabación demasiado corta")
-        } finally {
+            mediaRecorder?.apply { stop(); release() }
+        } catch (e: Exception) {} finally {
             mediaRecorder = null
             isRecording = false
             binding.btnAudio.setImageResource(R.drawable.ic_mic)
@@ -431,17 +417,12 @@ class AddNoteActivity : AppCompatActivity() {
 
     private fun playAudio() {
         if (audioPath == null) return
-        
         mediaPlayer?.release()
         mediaPlayer = MediaPlayer().apply {
             try {
-                setDataSource(audioPath)
-                prepare()
-                start()
-                showToast("Reproduciendo audio...")
-            } catch (e: IOException) {
-                showToast("Error al reproducir audio")
-            }
+                setDataSource(audioPath); prepare(); start()
+                showToast("Reproduciendo...")
+            } catch (e: IOException) { showToast("Error al reproducir") }
         }
     }
 
@@ -452,30 +433,22 @@ class AddNoteActivity : AppCompatActivity() {
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
             startActivity(intent)
-        } catch (e: Exception) {
-            showToast("No hay aplicaciones para abrir este archivo")
-        }
+        } catch (e: Exception) { showToast("Error al abrir") }
     }
 
     private fun getFileSize(uri: Uri): Long {
         return contentResolver.query(uri, null, null, null, null)?.use { cursor ->
             val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
-            if (sizeIndex != -1 && cursor.moveToFirst()) {
-                cursor.getLong(sizeIndex)
-            } else 0L
+            if (sizeIndex != -1 && cursor.moveToFirst()) cursor.getLong(sizeIndex) else 0L
         } ?: 0L
     }
 
     private fun showFullScreenImage(uri: Uri) {
         val dialog = Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
         val imageView = ImageView(this)
-        imageView.layoutParams = ViewGroup.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-        )
+        imageView.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         imageView.scaleType = ImageView.ScaleType.FIT_CENTER
         Glide.with(this).load(uri).into(imageView)
-        
         imageView.setOnClickListener { dialog.dismiss() }
         dialog.setContentView(imageView)
         dialog.show()
@@ -488,105 +461,104 @@ class AddNoteActivity : AppCompatActivity() {
 
     private fun showAudio(path: String) {
         binding.chipAudio.visibility = View.VISIBLE
-        binding.chipAudio.text = "Audio grabado (Toca para oír)"
+        var durationText = "00:00"
+        val mmr = MediaMetadataRetriever()
+        try {
+            mmr.setDataSource(path)
+            val durationMs = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLong() ?: 0L
+            val seconds = (durationMs / 1000) % 60
+            val minutes = (durationMs / (1000 * 60)) % 60
+            durationText = String.format("%02d:%02d", minutes, seconds)
+        } catch (e: Exception) {
+            Log.e("AddNoteActivity", "Error getting audio duration", e)
+        } finally {
+            try { mmr.release() } catch (e: Exception) {}
+        }
+        binding.chipAudio.text = "Audio ($durationText)"
     }
 
     private fun showFile(uri: Uri) {
         binding.chipFile.visibility = View.VISIBLE
-        val fileName = try {
-            contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-                val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                if (nameIndex != -1 && cursor.moveToFirst()) {
-                    cursor.getString(nameIndex)
-                } else null
-            } ?: uri.path?.split("/")?.lastOrNull() ?: "Documento"
+        var fileName = "Archivo"
+        try {
+            if (uri.scheme == "content") {
+                contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                    val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (nameIndex != -1 && cursor.moveToFirst()) {
+                        fileName = cursor.getString(nameIndex)
+                    }
+                }
+            } else {
+                fileName = uri.lastPathSegment ?: "Archivo"
+            }
         } catch (e: Exception) {
-            "Documento"
+            fileName = "Archivo"
         }
-        binding.chipFile.text = "Archivo: $fileName"
+        binding.chipFile.text = fileName
     }
 
     private fun showDatePicker() {
-        val datePicker = MaterialDatePicker.Builder.datePicker()
-            .setTitleText("Seleccionar fecha de vencimiento")
-            .setSelection(MaterialDatePicker.todayInUtcMilliseconds())
-            .build()
-
+        val datePicker = MaterialDatePicker.Builder.datePicker().build()
         datePicker.addOnPositiveButtonClickListener { selection ->
             val calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
             calendar.timeInMillis = selection
-            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            endDate = sdf.format(calendar.time)
+            endDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(calendar.time)
             binding.chipEndDate.text = "Vence: $endDate"
         }
-        datePicker.show(supportFragmentManager, "DATE_PICKER")
+        datePicker.show(supportFragmentManager, "DP")
     }
 
     private fun saveNote() {
         val titleInput = binding.etTitle.text.toString().trim()
-        val content = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        val contentHtml = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             Html.toHtml(binding.etContent.text, Html.TO_HTML_PARAGRAPH_LINES_CONSECUTIVE)
         } else {
             @Suppress("DEPRECATION")
             Html.toHtml(binding.etContent.text)
         }
         
-        val isCompleted = binding.swCompleted.isChecked
-
-        if (titleInput.isEmpty() && content.isEmpty() && subtasks.all { it.title.isEmpty() }) {
-            Toast.makeText(this, "La tarea no puede estar vacía", Toast.LENGTH_SHORT).show()
-            return
+        if (titleInput.isEmpty() && binding.etContent.text.isEmpty() && subtasks.all { it.title.isEmpty() }) {
+            showToast("Tarea vacía"); return
         }
 
-        val finalTitle = if (titleInput.isEmpty()) "Sin título" else titleInput
+        val finalTitle = titleInput.ifEmpty { "Sin título" }
+        val currentSubtasks = subtasks.toList() 
 
         lifecycleScope.launch {
             val noteToSave = if (existingNote != null) {
                 existingNote!!.copy(
-                    title = finalTitle,
-                    content = content,
-                    category = category,
-                    endDate = endDate,
-                    isCompleted = isCompleted,
-                    imagePath = imageUri,
-                    audioPath = audioPath,
-                    filePath = fileUri
+                    title = finalTitle, content = contentHtml, category = category,
+                    endDate = endDate, isCompleted = binding.swCompleted.isChecked,
+                    imagePath = imageUri, audioPath = audioPath, filePath = fileUri,
+                    fontSize = activeFontSize.toFloat()
                 )
             } else {
                 val sdf = SimpleDateFormat("EEEE, d 'de' MMMM", Locale("es", "ES"))
                 Note(
-                    title = finalTitle,
-                    content = content,
-                    date = sdf.format(Date()),
-                    category = category,
-                    endDate = endDate,
-                    isCompleted = isCompleted,
-                    imagePath = imageUri,
-                    audioPath = audioPath,
-                    filePath = fileUri
+                    title = finalTitle, content = contentHtml, date = sdf.format(Date()),
+                    category = category, endDate = endDate, isCompleted = binding.swCompleted.isChecked,
+                    imagePath = imageUri, audioPath = audioPath, filePath = fileUri,
+                    fontSize = activeFontSize.toFloat()
                 )
             }
 
-            val noteId = if (existingNote != null) {
-                viewModel.update(noteToSave)
-                existingNote!!.id
-            } else {
-                val db = AppDatabase.getDatabase(this@AddNoteActivity)
-                db.noteDao().insert(noteToSave).toInt()
+            val noteId = withContext(Dispatchers.IO) {
+                if (existingNote != null) { viewModel.update(noteToSave); existingNote!!.id }
+                else { viewModel.insert(noteToSave).toInt() }
             }
             
-            if (noteId != 0) {
-                val db = AppDatabase.getDatabase(this@AddNoteActivity)
-                db.subtaskDao().deleteSubtasksByNoteId(noteId)
-                subtasks.forEach { sub ->
-                    if (sub.title.isNotEmpty()) {
-                        db.subtaskDao().insert(sub.copy(noteId = noteId, id = 0))
+            if (noteId > 0) {
+                withContext(Dispatchers.IO) {
+                    val db = AppDatabase.getDatabase(this@AddNoteActivity)
+                    db.subtaskDao().deleteSubtasksByNoteId(noteId)
+                    currentSubtasks.forEach { sub ->
+                        if (sub.title.isNotEmpty()) {
+                            db.subtaskDao().insert(sub.copy(noteId = noteId, id = 0))
+                        }
                     }
                 }
             }
-
-            Toast.makeText(this@AddNoteActivity, "Tarea guardada", Toast.LENGTH_SHORT).show()
-            finish()
+            showToast("Guardado"); finish()
         }
     }
 
@@ -595,13 +567,10 @@ class AddNoteActivity : AppCompatActivity() {
         binding.tvDate.text = "Creada el ${sdf.format(Date())}"
     }
     
-    private fun showToast(msg: String) {
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-    }
+    private fun showToast(msg: String) { Toast.makeText(this, msg, Toast.LENGTH_SHORT).show() }
 
     override fun onDestroy() {
         super.onDestroy()
-        mediaRecorder?.release()
-        mediaPlayer?.release()
+        mediaRecorder?.release(); mediaPlayer?.release()
     }
 }

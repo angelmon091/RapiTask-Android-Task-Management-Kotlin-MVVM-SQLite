@@ -162,10 +162,13 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         chip.isCheckedIconVisible = false
         
         when (name) {
-            "Todas" -> { chip.id = R.id.chipTodas; chip.isChecked = true }
-            "Escuela" -> chip.id = R.id.chipEscuela
-            "Trabajo" -> chip.id = R.id.chipTrabajo
-            else -> chip.id = View.generateViewId()
+            "Todas" -> { chip.id = R.id.chipTodas; chip.isChecked = (currentFilter == "Todas") }
+            "Escuela" -> { chip.id = R.id.chipEscuela; chip.isChecked = (currentFilter == "Escuela") }
+            "Trabajo" -> { chip.id = R.id.chipTrabajo; chip.isChecked = (currentFilter == "Trabajo") }
+            else -> {
+                chip.id = View.generateViewId()
+                chip.isChecked = (currentFilter == name)
+            }
         }
 
         if (!isDefault) {
@@ -177,6 +180,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                         dynamicCategories.remove(chip.text.toString())
                         saveCategories()
                         binding.chipGroup.removeView(chip)
+                        updateDrawerMenu()
                         if (currentFilter == chip.text.toString()) {
                             currentFilter = "Todas"
                             findViewById<Chip>(R.id.chipTodas)?.isChecked = true
@@ -285,6 +289,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     dynamicCategories.add(name)
                     saveCategories()
                     addChipToGroup(name, false)
+                    updateDrawerMenu()
                 }
             }
             .setNegativeButton("Cancelar", null)
@@ -296,11 +301,20 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         popup.menuInflater.inflate(R.menu.task_options_menu, popup.menu)
         popup.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
-                R.id.action_pin -> { viewModel.update(note.copy(isPinned = !note.isPinned)); true }
-                R.id.action_lock -> { viewModel.update(note.copy(isLocked = !note.isLocked)); true }
+                R.id.action_pin -> { 
+                    lifecycleScope.launch { viewModel.update(note.copy(isPinned = !note.isPinned)) }
+                    true 
+                }
+                R.id.action_lock -> { 
+                    lifecycleScope.launch { viewModel.update(note.copy(isLocked = !note.isLocked)) }
+                    true 
+                }
                 R.id.action_duplicate -> { duplicateTask(note); true }
                 R.id.action_delete -> { viewModel.delete(note); true }
-                R.id.action_favorite -> { viewModel.update(note.copy(isFavorite = !note.isFavorite)); true }
+                R.id.action_favorite -> { 
+                    lifecycleScope.launch { viewModel.update(note.copy(isFavorite = !note.isFavorite)) }
+                    true 
+                }
                 else -> false
             }
         }
@@ -324,6 +338,25 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun setupNavigation() {
         binding.navView.setNavigationItemSelectedListener(this)
+        updateDrawerMenu()
+    }
+
+    private fun updateDrawerMenu() {
+        val menu = binding.navView.menu
+        val categoriesItem = menu.findItem(R.id.group_categories) ?: return
+        val subMenu = categoriesItem.subMenu ?: return
+        
+        subMenu.clear()
+        
+        // Add "Todas" with assignment icon
+        subMenu.add(R.id.group_categories, R.id.nav_todas, 0, "Todas")
+            .setIcon(R.drawable.ic_assignment)
+            
+        // Add dynamic categories with the list icon (ic_list) for all
+        dynamicCategories.forEach { category ->
+            subMenu.add(R.id.group_categories, Menu.NONE, Menu.NONE, category)
+                .setIcon(R.drawable.ic_list)
+        }
     }
 
     private fun setupBackNavigation() {
@@ -341,15 +374,47 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
+        var categoryToSelect: String? = null
+
         when (item.itemId) {
-            R.id.nav_inicio -> { showFavoritesOnly = false; currentFilter = "Todas"; findViewById<Chip>(R.id.chipTodas)?.isChecked = true; applyCurrentFilter() }
+            R.id.nav_inicio, R.id.nav_todas -> categoryToSelect = "Todas"
             R.id.nav_calendario -> startActivity(Intent(this, CalendarActivity::class.java))
             R.id.nav_recordatorio -> startActivity(Intent(this, RemindersActivity::class.java))
-            R.id.nav_favoritos -> { showFavoritesOnly = true; currentFilter = "Todas"; applyCurrentFilter() }
+            R.id.nav_favoritos -> {
+                showFavoritesOnly = true
+                currentFilter = "Todas"
+                updateChipSelection("Todas")
+                applyCurrentFilter()
+            }
             R.id.nav_ajustes -> startActivity(Intent(this, SettingsActivity::class.java))
+            else -> {
+                // Check if it's a dynamic category by title
+                val title = item.title.toString()
+                if (dynamicCategories.contains(title) || title == "Todas") {
+                    categoryToSelect = title
+                }
+            }
         }
+
+        categoryToSelect?.let {
+            showFavoritesOnly = false
+            currentFilter = it
+            updateChipSelection(it)
+            applyCurrentFilter()
+        }
+
         binding.drawerLayout.closeDrawer(GravityCompat.START)
         return true
+    }
+
+    private fun updateChipSelection(categoryName: String) {
+        for (i in 0 until binding.chipGroup.childCount) {
+            val chip = binding.chipGroup.getChildAt(i) as? Chip
+            if (chip?.text == categoryName) {
+                chip.isChecked = true
+                break
+            }
+        }
     }
 
     private fun showToast(message: String) {

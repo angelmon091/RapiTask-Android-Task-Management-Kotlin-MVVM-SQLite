@@ -5,12 +5,12 @@ import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.proyectofinal.databinding.ActivitySettingsBinding
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -74,7 +74,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun showLanguageDialog() {
         val languages = arrayOf("Español", "English")
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle("Seleccionar Idioma")
             .setItems(languages) { _, which ->
                 val selected = languages[which]
@@ -86,7 +86,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun showThemeDialog() {
         val themes = arrayOf("Sistema", "Claro", "Oscuro")
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle("Seleccionar Tema")
             .setItems(themes) { _, which ->
                 when (which) {
@@ -101,7 +101,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun showDateFormatDialog() {
         val formats = arrayOf("dd/MM/yyyy", "MM/dd/yyyy", "yyyy-MM-dd")
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle("Formato de Fecha")
             .setItems(formats) { _, which ->
                 binding.btnDateFormat.text = "Formato de Fecha: ${formats[which]}"

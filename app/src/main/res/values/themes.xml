@@ -42,13 +42,12 @@
         <item name="android:popupBackground">@drawable/bg_popup_menu</item>
     </style>
 
-    <!-- Estilo para diálogos Neutro -->
+    <!-- Estilo para diálogos Neutro - CORREGIDO FONDO -->
     <style name="CustomAlertDialogTheme" parent="Theme.Material3.DayNight.Dialog.Alert">
         <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.Dialog</item>
         <item name="colorSurface">@color/component_surface</item>
         <item name="colorOnSurface">@color/component_on_surface</item>
         <item name="backgroundTint">@color/component_surface</item>
-        <item name="android:windowBackground">@android:color/transparent</item>
     </style>
 
     <style name="ShapeAppearance.Dialog" parent="ShapeAppearance.Material3.LargeComponent">
@@ -63,10 +62,12 @@
         <item name="postSplashScreenTheme">@style/Theme.ProyectoFinal</item>
     </style>
 
-    <!-- Estilos restaurados para evitar errores de compilación -->
+    <!-- Estilos para Navigation Drawer -->
     <style name="TextAppearance.App.NavSubheader" parent="TextAppearance.Material3.LabelMedium">
         <item name="android:textColor">@color/primary</item>
         <item name="android:textStyle">bold</item>
+        <item name="android:paddingTop">16dp</item>
+        <item name="android:paddingBottom">8dp</item>
     </style>
 
     <style name="ThemeOverlay.App.Toolbar" parent="ThemeOverlay.Material3.ActionBar">
