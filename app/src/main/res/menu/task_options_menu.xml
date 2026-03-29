@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:id="@+id/action_pin"
-        android:title="Anclar/Desanclar" />
-    <item
         android:id="@+id/action_favorite"
+        android:icon="@drawable/ic_star"
         android:title="Favorito" />
     <item
         android:id="@+id/action_lock"
+        android:icon="@drawable/ic_lock"
         android:title="Bloquear/Desbloquear" />
     <item
         android:id="@+id/action_duplicate"
+        android:icon="@drawable/ic_assignment"
         android:title="Duplicar" />
     <item
         android:id="@+id/action_delete"
+        android:icon="@drawable/ic_close"
         android:title="Eliminar" />
 </menu>

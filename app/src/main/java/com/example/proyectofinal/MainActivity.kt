@@ -259,11 +259,21 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun showMainMenuOptions(view: View) {
-        val popup = PopupMenu(ContextThemeWrapper(this, R.style.CustomPopupMenuStyle), view)
+        val popup = PopupMenu(ContextThemeWrapper(this, R.style.CustomPopupMenuTheme), view)
         val menu = popup.menu
-        menu.add(Menu.NONE, 1, 1, if (isGridView) "Vista Listada" else "Vista Cuadrícula")
-        menu.add(Menu.NONE, 2, 2, if (currentSortOrder == "date") "Ordenar A-Z" else "Ordenar por fecha")
-        menu.add(Menu.NONE, 3, 3, "Agregar Sección")
+        
+        val gridItem = menu.add(Menu.NONE, 1, 1, if (isGridView) "Vista Listada" else "Vista Cuadrícula")
+        gridItem.setIcon(if (isGridView) R.drawable.ic_view_list else R.drawable.ic_view_grid)
+        
+        val sortItem = menu.add(Menu.NONE, 2, 2, if (currentSortOrder == "date") "Ordenar A-Z" else "Ordenar por fecha")
+        sortItem.setIcon(R.drawable.ic_sort)
+        
+        val sectionItem = menu.add(Menu.NONE, 3, 3, "Agregar Sección")
+        sectionItem.setIcon(R.drawable.ic_add_section)
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            popup.setForceShowIcon(true)
+        }
 
         popup.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
@@ -295,17 +305,19 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun showTaskOptions(note: Note, view: View) {
-        val popup = PopupMenu(ContextThemeWrapper(this, R.style.CustomPopupMenuStyle), view)
+        val popup = PopupMenu(ContextThemeWrapper(this, R.style.CustomPopupMenuTheme), view)
         popup.menuInflater.inflate(R.menu.task_options_menu, popup.menu)
         
-        val pinItem = popup.menu.findItem(R.id.action_pin)
-        pinItem?.title = if (note.isFavorite) "Quitar de favoritos" else "Marcar como favorito"
+        val favoriteItem = popup.menu.findItem(R.id.action_favorite)
+        favoriteItem?.title = if (note.isFavorite) "Quitar de favoritos" else "Marcar como favorito"
         
-        popup.menu.removeItem(R.id.action_favorite)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            popup.setForceShowIcon(true)
+        }
 
         popup.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
-                R.id.action_pin -> { 
+                R.id.action_favorite -> {
                     viewModel.update(note.copy(isFavorite = !note.isFavorite))
                     true 
                 }

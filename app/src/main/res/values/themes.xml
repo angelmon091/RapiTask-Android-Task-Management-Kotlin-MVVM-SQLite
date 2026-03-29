@@ -42,6 +42,13 @@
         <item name="android:popupBackground">@drawable/bg_popup_menu</item>
     </style>
 
+    <!-- Tema para Popups que unifica el color de iconos y texto -->
+    <style name="CustomPopupMenuTheme" parent="ThemeOverlay.Material3">
+        <item name="popupMenuStyle">@style/CustomPopupMenuStyle</item>
+        <item name="colorControlNormal">@color/primary</item>
+        <item name="android:textColorPrimary">?attr/colorOnSurface</item>
+    </style>
+
     <!-- Estilo para diálogos Neutro - CORREGIDO FONDO -->
     <style name="CustomAlertDialogTheme" parent="Theme.Material3.DayNight.Dialog.Alert">
         <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.Dialog</item>

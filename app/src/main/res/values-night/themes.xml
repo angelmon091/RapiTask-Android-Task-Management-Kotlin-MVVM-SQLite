@@ -33,6 +33,16 @@
 
     <style name="Theme.ProyectoFinal" parent="Base.Theme.ProyectoFinal" />
 
+    <style name="CustomPopupMenuStyle" parent="Widget.Material3.PopupMenu">
+        <item name="android:popupBackground">@drawable/bg_popup_menu</item>
+    </style>
+
+    <style name="CustomPopupMenuTheme" parent="ThemeOverlay.Material3">
+        <item name="popupMenuStyle">@style/CustomPopupMenuStyle</item>
+        <item name="colorControlNormal">@color/primary</item>
+        <item name="android:textColorPrimary">?attr/colorOnSurface</item>
+    </style>
+
     <style name="Widget.App.CalendarView" parent="android:Widget.CalendarView">
         <item name="android:focusedMonthDateColor">?attr/colorOnSurface</item>
         <item name="android:unfocusedMonthDateColor">?attr/colorOnSurfaceVariant</item>

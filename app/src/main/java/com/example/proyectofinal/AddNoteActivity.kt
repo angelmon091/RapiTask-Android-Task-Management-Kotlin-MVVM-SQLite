@@ -12,6 +12,7 @@ import android.media.MediaRecorder
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.provider.OpenableColumns
 import android.text.Editable
 import android.text.Html
@@ -26,6 +27,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -33,6 +35,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
@@ -44,6 +47,7 @@ import com.example.proyectofinal.databinding.ActivityAddNoteBinding
 import com.example.proyectofinal.databinding.LayoutFormatSheetBinding
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.datepicker.MaterialDatePicker
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -76,6 +80,8 @@ class AddNoteActivity : AppCompatActivity() {
     private var mediaPlayer: MediaPlayer? = null
     private var isRecording = false
 
+    private var tempImageUri: Uri? = null
+
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         uri?.let {
             try {
@@ -85,6 +91,23 @@ class AddNoteActivity : AppCompatActivity() {
             }
             imageUri = it.toString()
             showImage(it)
+        }
+    }
+
+    private val takePhotoLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        if (success) {
+            tempImageUri?.let { uri ->
+                imageUri = uri.toString()
+                showImage(uri)
+            }
+        }
+    }
+
+    private val requestCameraPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        if (isGranted) {
+            openCamera()
+        } else {
+            showToast("Permiso de cámara denegado")
         }
     }
 
@@ -141,7 +164,6 @@ class AddNoteActivity : AppCompatActivity() {
                     if (isUnderlineActive) {
                         editable.setSpan(UnderlineSpan(), startIdx, endIdx, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
                     }
-                    // Aplicar tamaño activo solo al texto nuevo
                     editable.setSpan(AbsoluteSizeSpan(activeFontSize, true), startIdx, endIdx, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
                 }
             }
@@ -179,15 +201,9 @@ class AddNoteActivity : AppCompatActivity() {
             existingNote = note
             note?.let { n ->
                 binding.etTitle.setText(n.title)
-                
-                // Restablecer el tamaño base a 16sp para evitar herencias raras
                 binding.etContent.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
-
-                val spannedContent =
-                    Html.fromHtml(n.content, Html.FROM_HTML_MODE_LEGACY)
-
+                val spannedContent = Html.fromHtml(n.content, Html.FROM_HTML_MODE_LEGACY)
                 binding.etContent.setText(spannedContent)
-                
                 binding.tvDate.text = "Creada el ${n.dateText}"
                 binding.swCompleted.isChecked = n.isCompleted
                 category = n.category
@@ -223,12 +239,33 @@ class AddNoteActivity : AppCompatActivity() {
         val categories = mutableListOf("Todas")
         categories.addAll(saved ?: emptySet())
         
-        val adapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, categories)
+        val adapter = object : ArrayAdapter<String>(this, R.layout.item_dropdown_category, R.id.tvCategoryName, categories) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = super.getView(position, convertView, parent)
+                val icon = view.findViewById<ImageView>(R.id.ivCategoryIcon)
+                val name = view.findViewById<TextView>(R.id.tvCategoryName)
+                val categoryName = getItem(position)
+                
+                name.text = categoryName
+                val resId = if (categoryName == "Todas") {
+                    R.drawable.ic_assignment
+                } else {
+                    R.drawable.ic_list
+                }
+                icon.setImageResource(resId)
+                return view
+            }
+
+            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
+                return getView(position, convertView, parent)
+            }
+        }
+        
         binding.actvCategory.setAdapter(adapter)
         binding.actvCategory.setText(category, false)
         
         binding.actvCategory.setOnItemClickListener { _, _, position, _ ->
-            category = adapter.getItem(position) ?: "Todas"
+            category = categories[position]
         }
     }
 
@@ -256,7 +293,7 @@ class AddNoteActivity : AppCompatActivity() {
         
         binding.btnTextFormat.setOnClickListener { showFormatSheet() }
         binding.btnAudio.setOnClickListener { toggleRecording() }
-        binding.btnImage.setOnClickListener { pickImageLauncher.launch(arrayOf("image/*")) }
+        binding.btnImage.setOnClickListener { showImageOptions() }
         binding.btnFile.setOnClickListener { pickFileLauncher.launch(arrayOf("*/*")) }
 
         binding.btnRemoveImage.setOnClickListener {
@@ -282,6 +319,52 @@ class AddNoteActivity : AppCompatActivity() {
 
         binding.ivTaskImage.setOnClickListener {
             imageUri?.let { uriStr -> showFullScreenImage(Uri.parse(uriStr)) }
+        }
+    }
+
+    private fun showImageOptions() {
+        val dialog = BottomSheetDialog(this)
+        val sheetView = layoutInflater.inflate(R.layout.layout_image_picker_sheet, null)
+        dialog.setContentView(sheetView)
+
+        sheetView.findViewById<View>(R.id.btn_gallery).setOnClickListener {
+            pickImageLauncher.launch(arrayOf("image/*"))
+            dialog.dismiss()
+        }
+
+        sheetView.findViewById<View>(R.id.btn_camera).setOnClickListener {
+            checkCameraPermission()
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
+    private fun checkCameraPermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            openCamera()
+        } else {
+            requestCameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    private fun openCamera() {
+        try {
+            val storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+            if (storageDir != null && !storageDir.exists()) storageDir.mkdirs()
+            
+            val photoFile = File(storageDir, "IMG_${System.currentTimeMillis()}.jpg")
+            
+            tempImageUri = FileProvider.getUriForFile(
+                this,
+                "${packageName}.fileprovider",
+                photoFile
+            )
+            
+            takePhotoLauncher.launch(tempImageUri!!)
+        } catch (e: Exception) {
+            Log.e("AddNoteActivity", "Error cámara: ${e.message}", e)
+            showToast("No se pudo abrir la cámara")
         }
     }
 
@@ -356,7 +439,6 @@ class AddNoteActivity : AppCompatActivity() {
         val end = binding.etContent.selectionEnd
         val editable = binding.etContent.text
         if (start != -1 && end != -1 && start != end) {
-            // Si es un cambio de tamaño, primero eliminamos cualquier AbsoluteSizeSpan existente en el rango
             if (span is AbsoluteSizeSpan) {
                 val existingSpans = editable.getSpans(start, end, AbsoluteSizeSpan::class.java)
                 for (s in existingSpans) { editable.removeSpan(s) }
